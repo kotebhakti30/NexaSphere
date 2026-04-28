@@ -111,7 +111,7 @@ function ScanLine() {
 }
 
 // ── Event Card ──
-function EventCard({ event, activityColor, onSelect }) {
+function EventCard({ event, activityColor, onSelect, onDelete }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -146,6 +146,13 @@ function EventCard({ event, activityColor, onSelect }) {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
         <div style={{ flex: 1 }}>
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={(e) => { e.stopPropagation(); onDelete && onDelete(event.id); }}
+            style={{ marginBottom: '8px' }}
+          >
+            Delete this event
+          </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
             <h3 style={{
               fontFamily: 'Orbitron, monospace', fontSize: '0.95rem', fontWeight: 700,
@@ -180,6 +187,13 @@ function EventCard({ event, activityColor, onSelect }) {
               ))}
             </div>
           )}
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={(e) => { e.stopPropagation(); onDelete && onDelete(event.id); }}
+            style={{ marginTop: '12px' }}
+          >
+            Delete this event
+          </button>
         </div>
         <div style={{
           color: activityColor, fontSize: '1.4rem', flexShrink: 0,
@@ -234,11 +248,87 @@ function hexToRgb(hex) {
 // ════════════════════════════════════════
 export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) {
   const [mounted, setMounted] = useState(false);
+  const [manualEvents, setManualEvents] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const apiBase = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
+  const activityKey = encodeURIComponent(activity.title);
+
+  const fetchManualEvents = async () => {
+    const url = apiBase ? `${apiBase}/api/content/activity-events/${activityKey}` : `/api/content/activity-events/${activityKey}`;
+    const res = await fetch(url);
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && Array.isArray(data?.events)) setManualEvents(data.events);
+  };
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
     setTimeout(() => setMounted(true), 50);
-  }, []);
+    fetchManualEvents().catch(() => {});
+  }, [activity.title]);
+
+  const askAuth = () => {
+    const name = window.prompt('Enter your full name (core team):');
+    if (!name) return null;
+    const email = window.prompt('Enter your email:');
+    if (!email) return null;
+    const phone = window.prompt('Enter your phone number:');
+    if (!phone) return null;
+    const password = window.prompt('Enter password:');
+    if (!password) return null;
+    return { name, email, phone, password };
+  };
+
+  const handleAddEvent = async () => {
+    const auth = askAuth();
+    if (!auth) return;
+    const eventName = window.prompt('Event name:');
+    if (!eventName) return;
+    const eventDate = window.prompt('Event date (e.g. May 20, 2026):');
+    if (!eventDate) return;
+    const eventTagline = window.prompt('Short tagline (optional):') || '';
+    const eventDescription = window.prompt('Event description:');
+    if (!eventDescription) return;
+    setBusy(true);
+    try {
+      const url = apiBase ? `${apiBase}/api/content/activity-events/${activityKey}` : `/api/content/activity-events/${activityKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...auth, eventName, eventDate, eventTagline, eventDescription }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Failed to add event');
+      alert('Event added successfully.');
+      await fetchManualEvents();
+    } catch (e) {
+      alert(e?.message || 'Unable to add event.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    const auth = askAuth();
+    if (!auth) return;
+    if (!window.confirm('Delete this event?')) return;
+    setBusy(true);
+    try {
+      const url = apiBase ? `${apiBase}/api/content/activity-events/${activityKey}/${eventId}` : `/api/content/activity-events/${activityKey}/${eventId}`;
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(auth),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Failed to delete event');
+      alert('Event deleted.');
+      await fetchManualEvents();
+    } catch (e) {
+      alert(e?.message || 'Unable to delete event.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const color = activity.color || 'var(--cyan)';
   const rgb = color.startsWith('#') ? hexToRgb(color) : '0,212,255';
@@ -325,7 +415,7 @@ export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) 
       <div className="container" style={{ paddingTop: '56px' }}>
 
         {/* Conducted Events */}
-        {activity.conductedEvents && activity.conductedEvents.length > 0 && (
+        {((activity.conductedEvents && activity.conductedEvents.length > 0) || manualEvents.length > 0) && (
           <div style={{ marginBottom: '56px' }}>
             <h2 style={{
               fontFamily: 'Orbitron, monospace', fontSize: '1.1rem', fontWeight: 700,
@@ -339,13 +429,19 @@ export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) 
               }} />
               Conducted Events
             </h2>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+              <button className="btn btn-primary btn-sm" onClick={handleAddEvent} disabled={busy}>
+                {busy ? 'Please wait...' : '+ Add Event'}
+              </button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '760px' }}>
-              {activity.conductedEvents.map(event => (
+              {[...manualEvents, ...(activity.conductedEvents || [])].map(event => (
                 <EventCard
                   key={event.id}
                   event={event}
                   activityColor={color}
                   onSelect={onSelectEvent}
+                  onDelete={handleDeleteEvent}
                 />
               ))}
             </div>
@@ -377,6 +473,7 @@ export default function ActivityDetailPage({ activity, onBack, onSelectEvent }) 
 
         {/* Empty state */}
         {(!activity.conductedEvents || activity.conductedEvents.length === 0) &&
+         (!manualEvents || manualEvents.length === 0) &&
          (!activity.upcomingEvents || activity.upcomingEvents.length === 0) && (
           <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '80px 0' }}>
             <div style={{ fontSize: '4rem', marginBottom: '16px' }}>{activity.icon}</div>

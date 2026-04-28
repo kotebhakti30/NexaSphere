@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { events } from '../../data/eventsData';
+import { events as fallbackEvents } from '../../data/eventsData';
 import { BannerOrbs } from '../../shared/MotionLayer';
 
-export default function EventsPage({ onBack, onEventClick }) {
+export default function EventsPage({ onBack, onEventClick, events = fallbackEvents }) {
   useEffect(() => {
     window.scrollTo({ top: 0 });
     const obs = new IntersectionObserver(entries => {
@@ -44,7 +44,7 @@ export default function EventsPage({ onBack, onEventClick }) {
       <div className="container">
         <div className="events-timeline ns-reveal">
           {events.map((ev, i) => {
-            const isKSS = ev.id === 1; // KSS is clickable
+            const isKSS = ev.id === 1 || ev.id === 'kss-153' || String(ev.shortName || '').toLowerCase().includes('kss');
             return (
               <div className="timeline-item" key={ev.id}>
                 <div className={`timeline-dot${ev.status === 'upcoming' ? ' upcoming' : ''}`} />

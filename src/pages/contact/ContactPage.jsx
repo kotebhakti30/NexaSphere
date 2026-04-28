@@ -281,14 +281,14 @@ function MessageCTA() {
         <a
           href={`mailto:${EMAIL}?subject=${subject}&body=${body}`}
           className="btn btn-primary btn-ripple"
-          style={{ flex: 1, minWidth: 180, justifyContent: 'center' }}
+          style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}
         >
           📧 Open Email App
         </a>
         <button
           className="btn btn-outline btn-ripple"
           onClick={handleCopy}
-          style={{ flex: 1, minWidth: 160, justifyContent: 'center' }}
+          style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}
         >
           {copied ? '✅ Copied!' : '📋 Copy Email'}
         </button>

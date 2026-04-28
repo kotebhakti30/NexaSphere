@@ -570,7 +570,7 @@ export default function RecruitmentPage({ onBack }) {
           <Field label="Year of Study" required>
             <PillRadio options={YEAR_OPTIONS} value={form.year} onChange={v => setForm(f => ({ ...f, year: v }))} />
           </Field>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
               <Field label="Branch / Department" required>
               <div style={{ display: 'grid', gap: 8 }}>
                 <select
@@ -939,9 +939,6 @@ export default function RecruitmentPage({ onBack }) {
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // Google Apps Script Web App URL — writes responses directly to Google Sheets
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzo1g6WNiO-f8kySE4Mqbdlh3VxZx9pRGLcjt7qyzRCNB1TMK0kRwjZbDD2UsaJFQ0q/exec';
-
   async function submit() {
     setErr('');
     setBusy(true);
@@ -969,35 +966,8 @@ export default function RecruitmentPage({ onBack }) {
         }
       } catch { /* ignore */ }
 
-      // Try Google Apps Script first (primary — writes to Google Sheet directly)
-      const gasUrl = import.meta?.env?.VITE_APPS_SCRIPT_URL || APPS_SCRIPT_URL;
-      const useGas = gasUrl && !gasUrl.includes('PLACEHOLDER');
-
-      if (useGas) {
-        // Use no-cors mode for Apps Script (it returns opaque response — treat success as ok)
-        // IMPORTANT: must use 'text/plain' not 'application/json' — only simple headers
-        // are allowed in no-cors mode; json triggers a preflight that Apps Script blocks,
-        // causing the body to be silently dropped. Apps Script still parses the raw text as JSON.
-        await fetch(gasUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(payload),
-        });
-        // Save email to localStorage to prevent duplicate from this device
-        try {
-          const existing = JSON.parse(localStorage.getItem('ns_submitted_emails') || '[]');
-          existing.push(emailKey);
-          localStorage.setItem('ns_submitted_emails', JSON.stringify(existing));
-        } catch { /* ignore */ }
-        setDone(true);
-        scrollTop();
-        return;
-      }
-
-      // Fallback: backend API route
       const apiBase = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
-      const url = apiBase ? `${apiBase}/api/core-team/apply` : '/api/core-team/apply';
+      const url = apiBase ? `${apiBase}/api/forms/recruitment` : '/api/forms/recruitment';
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1005,6 +975,11 @@ export default function RecruitmentPage({ onBack }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || 'Submission failed');
+      try {
+        const existing = JSON.parse(localStorage.getItem('ns_submitted_emails') || '[]');
+        existing.push(emailKey);
+        localStorage.setItem('ns_submitted_emails', JSON.stringify(existing));
+      } catch { /* ignore */ }
       setDone(true);
       scrollTop();
     } catch (e) {
@@ -1244,7 +1219,7 @@ export default function RecruitmentPage({ onBack }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-whatsapp"
-                    style={{ flex: 1, minWidth: 220, justifyContent: 'center' }}
+                    style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}
                   >
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       Core Team Screening Room <IconArrowRight />
@@ -1255,7 +1230,7 @@ export default function RecruitmentPage({ onBack }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-outline"
-                    style={{ flex: 1, minWidth: 220, justifyContent: 'center' }}
+                    style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}
                   >
                     NexaSphere LinkedIn
                   </a>
@@ -1406,4 +1381,3 @@ export default function RecruitmentPage({ onBack }) {
     </div>
   );
 }
-

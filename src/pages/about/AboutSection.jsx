@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const WHATSAPP       = 'https://chat.whatsapp.com/Jjc5cuUKENu0RC1vWSEs20';
 const LINKEDIN       = 'https://www.linkedin.com/showcase/glbajaj-nexasphere/';
@@ -7,6 +7,8 @@ const NEXASPHERE_EMAIL = 'nexasphere@glbajajgroup.org';
 const values = ['Innovation','Collaboration','Learning','Growth','Community','Technology','Career','Mentorship'];
 
 export default function AboutSection() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
   useEffect(()=>{
     const obs=new IntersectionObserver(entries=>{
       entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('fired');obs.unobserve(e.target);}});
@@ -14,6 +16,12 @@ export default function AboutSection() {
     document.querySelectorAll('#section-about .pop-in,#section-about .pop-left,#section-about .pop-right,#section-about .pop-word').forEach(el=>obs.observe(el));
     return()=>obs.disconnect();
   },[]);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', onResize, { passive: true });
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   return (
     <section className="section" id="section-about" style={{position:'relative',overflow:'hidden'}}>
@@ -24,7 +32,14 @@ export default function AboutSection() {
           <p className="section-subtitle pop-in" style={{animationDelay:'.1s'}}>Building Tomorrow&apos;s Tech Leaders Today</p>
         </div>
 
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'44px',alignItems:'center',maxWidth:'920px',margin:'0 auto 44px'}}>
+        <div style={{
+          display:'grid',
+          gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr',
+          gap:isMobile ? '24px' : '44px',
+          alignItems:'center',
+          maxWidth:'920px',
+          margin:'0 auto 44px'
+        }}>
           <div className="ns-reveal-left">
             <p className="about-text pop-left" style={{animationDelay:'.08s'}}>
               <strong style={{color:'var(--c1)'}}>NexaSphere</strong> is a student-driven tech ecosystem at{' '}
