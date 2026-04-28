@@ -27,8 +27,10 @@ import TeamPage            from './pages/team/TeamPage';
 import ContactPage         from './pages/contact/ContactPage';
 import RecruitmentPage     from './pages/recruitment/RecruitmentPage';
 import MembershipPage      from './pages/membership/MembershipPage';
+import AdminPage           from './pages/admin/AdminPage';
 
 import { activityPages }   from './data/activities/index';
+import { events as fallbackEvents } from './data/eventsData';
 import nexasphereLogo      from './assets/images/logos/nexasphere-logo.png';
 
 const MNH = 88, DNH = 64;
@@ -196,6 +198,8 @@ export default function App() {
   const [wipePh,   setWipePh]   = useState('out');
   const [page,     setPage]     = useState(null);
   const [theme,    setTheme]    = useState(()=>localStorage.getItem('ns-theme')||'dark');
+  const [eventsData,setEventsData]=useState(fallbackEvents);
+  const isAdminRoute = typeof window !== 'undefined' && window.location.pathname === '/admin';
   // Apply theme to html element
   useEffect(()=>{
     document.documentElement.setAttribute('data-theme',theme);
@@ -205,6 +209,22 @@ export default function App() {
   // Simple theme toggle — no animation, just CSS transition
   const toggleTheme = useCallback(() => {
     setTheme(t => t === 'dark' ? 'light' : 'dark');
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const base = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
+    const url = base ? `${base}/api/content/events` : '/api/content/events';
+    fetch(url)
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('Failed to load dynamic events')))
+      .then(data => {
+        if (!alive) return;
+        if (Array.isArray(data?.events) && data.events.length > 0) {
+          setEventsData(data.events);
+        }
+      })
+      .catch(() => {});
+    return () => { alive = false; };
   }, []);
   // Back to top button
   useEffect(()=>{
@@ -382,6 +402,13 @@ export default function App() {
       {cinDone&&<Navbar activeTab={activeTab} onTabChange={onTab} onToggleTheme={toggleTheme}/>}
 
       <main style={{paddingTop:nh,position:'relative',zIndex:1}}>
+        {isAdminRoute && (
+          <PageIn k="pg-admin">
+            <AdminPage/>
+          </PageIn>
+        )}
+        {!isAdminRoute && (
+          <>
         {/* Section pages — navbar tab clicks */}
         {page?.type==='section'&&page.section==='Activities'&&(
           <PageIn k="pg-activities">
@@ -390,7 +417,7 @@ export default function App() {
         )}
         {page?.type==='section'&&page.section==='Events'&&(
           <PageIn k="pg-events">
-            <EventsPage onBack={onBackHome} onEventClick={onKSSClick}/>
+            <EventsPage onBack={onBackHome} onEventClick={onKSSClick} events={eventsData}/>
           </PageIn>
         )}
         {page?.type==='section'&&page.section==='About'&&(
@@ -414,7 +441,8 @@ export default function App() {
             {(() => {
               // For KSS event from eventsData, use the corresponding conducted event from activity
               let displayEvent = page.event;
-              if (page.activityKey === 'Insight Session' && page.event.id === 1) {
+              const isKssEvent = page.event.id === 1 || page.event.id === 'kss-153' || String(page.event.shortName || '').toLowerCase().includes('kss');
+              if (page.activityKey === 'Insight Session' && isKssEvent) {
                 // Find KSS #153 in conducted events
                 displayEvent = cur.conductedEvents?.find(e => e.id === 'kss-153') || page.event;
               }
@@ -445,13 +473,15 @@ export default function App() {
             <SectionDivider/>
             <ActivitiesSection onNavigate={onNavigate}/>
             <SectionDivider/>
-            <EventsSection onEventClick={onKSSClick}/>
+            <EventsSection onEventClick={onKSSClick} events={eventsData}/>
             <SectionDivider/>
             <AboutSection/>
             <SectionDivider/>
             <TeamSection onApply={openApply}/>
             <Footer/>
           </PageIn>
+        )}
+          </>
         )}
       </main>
 

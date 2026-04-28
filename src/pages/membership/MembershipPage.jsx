@@ -30,7 +30,6 @@ const GROUP_OPTIONS    = [
 
 // ── Apps Script URL for Membership sheet ─────────────────────────────────────
 // Replace this with your deployed Web App URL after deploying Code.gs
-const MEMBERSHIP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyRQOW3Xjv13vXvft8ezD9sJdvjV3kf-VHm1l_mImHRDUAEqsilK0wb5QBD5GOkixwe/exec';
 
 // ── Utility ──────────────────────────────────────────────────────────────────
 function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
@@ -302,17 +301,15 @@ export default function MembershipPage({ onBack }) {
         formType:     'membership',
       };
 
-      const gasUrl = import.meta?.env?.VITE_MEMBERSHIP_SCRIPT_URL || MEMBERSHIP_SCRIPT_URL;
-      const useGas = gasUrl && !gasUrl.includes('PLACEHOLDER') && !gasUrl.includes('YOUR_MEMBERSHIP');
-
-      if (useGas) {
-        await fetch(gasUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(payload),
-        });
-      }
+      const apiBase = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
+      const url = apiBase ? `${apiBase}/api/forms/membership` : '/api/forms/membership';
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Membership form submission failed');
 
       // Save to localStorage to prevent re-submit from same device
       try {
@@ -526,7 +523,7 @@ export default function MembershipPage({ onBack }) {
             </Field>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
             <Field label="Section" required hint="Academic Section (A/B/C/...)">
               <StyledSelect value={form.section} onChange={v => set('section', v)} placeholder="-- Select Section --">
                 {SECTION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -773,7 +770,7 @@ export default function MembershipPage({ onBack }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-primary"
-                    style={{ flex:1, minWidth:200, justifyContent:'center' }}
+                    style={{ flex:1, minWidth:0, justifyContent:'center' }}
                   >
                     Join WhatsApp Community
                   </a>
@@ -782,7 +779,7 @@ export default function MembershipPage({ onBack }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-outline"
-                    style={{ flex:1, minWidth:200, justifyContent:'center' }}
+                    style={{ flex:1, minWidth:0, justifyContent:'center' }}
                   >
                     NexaSphere LinkedIn
                   </a>

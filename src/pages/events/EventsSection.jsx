@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { events } from '../../data/eventsData';
+import { events as fallbackEvents } from '../../data/eventsData';
 
-export default function EventsSection({ onEventClick }) {
+export default function EventsSection({ onEventClick, events = fallbackEvents }) {
   useEffect(()=>{
     const obs=new IntersectionObserver(entries=>{
       entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('fired');obs.unobserve(e.target);}});
@@ -19,7 +19,7 @@ export default function EventsSection({ onEventClick }) {
         </div>
         <div className="events-timeline">
           {events.map((ev,i)=>{
-            const isKSS = ev.id === 1;
+            const isKSS = ev.id === 1 || ev.id === 'kss-153' || String(ev.shortName || '').toLowerCase().includes('kss');
             return (
               <div className="timeline-item" key={ev.id}>
                 <div className={`timeline-dot${ev.status==='upcoming'?' upcoming':''}`}/>
