@@ -251,7 +251,7 @@
 [data-theme="light"] .ns-nav-tab:hover  { color:var(--t1); }
 [data-theme="light"] .ns-nav-tab.active { color:#CC1111; }
 
-.ns-navbar-mobile { position:fixed; top:0; left:0; right:0; z-index:12010; background:rgba(5,5,8,.12); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border-bottom:1px solid var(--bdr); padding:6px 0 4px; }
+.ns-navbar-mobile { position:fixed; top:0; left:0; right:0; z-index:12010; background:rgba(10,10,10,0.95); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border-bottom:1px solid var(--bdr); padding:6px 0 4px; }
 [data-theme="light"] .ns-navbar-mobile {
   background: rgba(255,255,255,.12) !important;
   backdrop-filter: blur(40px) saturate(200%) !important;
@@ -260,7 +260,7 @@
 }
 .ns-mobile-top { display:flex; align-items:center; justify-content:center; gap:10px; padding:0 14px 5px; }
 .ns-mobile-logo-ns {
-  height: 42px; width: 42px; object-fit: contain;
+  height: 55px; width: auto; object-fit: contain;
   mix-blend-mode: normal;
   filter: drop-shadow(0 0 8px rgba(204,17,17,.6)) brightness(1.05);
 }
@@ -731,3 +731,39 @@
   color: #fff !important;
   border-color: transparent !important;
 }
+
+/* ── Activity Gradients ── */
+.activity-hackathon    { --act-grad: linear-gradient(135deg,#E63946 0%,#C41E3A 100%); --act-glow: rgba(230,57,70,0.3); }
+.activity-codathon     { --act-grad: linear-gradient(135deg,#FF5A5F 0%,#E63946 100%); --act-glow: rgba(255,90,95,0.3); }
+.activity-ideathon     { --act-grad: linear-gradient(135deg,#FF6B6B 0%,#E63946 100%); --act-glow: rgba(255,107,107,0.3); }
+.activity-promptathon  { --act-grad: linear-gradient(135deg,#FF8787 0%,#E63946 100%); --act-glow: rgba(255,135,135,0.3); }
+.activity-workshop     { --act-grad: linear-gradient(135deg,#B71C1C 0%,#8B0000 100%); --act-glow: rgba(183,28,28,0.3); }
+.activity-insight-session   { --act-grad: linear-gradient(135deg,#C41E3A 0%,#A4161A 100%); --act-glow: rgba(196,30,58,0.3); }
+.activity-open-source-day   { --act-grad: linear-gradient(135deg,#E63946 0%,#FF6B6B 100%); --act-glow: rgba(230,57,70,0.3); }
+.activity-tech-debate  { --act-grad: linear-gradient(135deg,#A4161A 0%,#8B0000 100%); --act-glow: rgba(164,22,26,0.3); }
+
+/* ── Footer Responsive Logos ── */
+.ns-footer-logo-mobile  { display: block; }
+.ns-footer-logo-desktop { display: none; }
+.ns-footer-logo-full {
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(230,57,70,0.4));
+}
+[data-theme="light"] .ns-footer-logo-full { filter: brightness(0.85); opacity: 0.9; }
+@media (min-width: 640px) {
+  .ns-footer-logo-mobile  { display: none; }
+  .ns-footer-logo-desktop { display: block; }
+}
+
+/* ── Navbar Full Logo (desktop only) ── */
+.ns-nav-logo-full {
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(230,57,70,0.3));
+  display: none;
+}
+@media (min-width: 900px) {
+  .ns-nav-logo-full { display: block; }
+}
+[data-theme="light"] .ns-nav-logo-full { filter: drop-shadow(0 0 6px rgba(230,57,70,0.2)); }
