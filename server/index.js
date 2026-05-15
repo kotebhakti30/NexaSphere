@@ -11,6 +11,7 @@ import { sendWelcomeVerificationEmail } from './services/emailService.js';
 import { ZodError } from 'zod';
 import { normalizeFormSubmission } from './validators/formSchemas.js';
 import * as adminAuthMiddleware from './middleware/adminAuthMiddleware.js';
+import analyticsRouter from './routes/analytics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -73,7 +74,7 @@ const defaultContent = {
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
-const HAS_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_SERVICE_KEY);
+export const HAS_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_SERVICE_KEY);
 
 function requiredEnv(name) {
   const v = process.env[name];
@@ -106,7 +107,7 @@ async function writeContent(content) {
   await fs.writeFile(CONTENT_FILE, JSON.stringify(content, null, 2), 'utf8');
 }
 
-async function supabaseRequest(pathname, { method = 'GET', body } = {}) {
+export async function supabaseRequest(pathname, { method = 'GET', body } = {}) {
   if (!HAS_SUPABASE) throw new Error('Supabase is not configured');
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathname}`, {
     method,
@@ -569,6 +570,7 @@ app.delete('/api/content/activity-events/:activityKey/:eventId', async (req, res
 
 app.post('/api/admin/login', adminAuthMiddleware.login);
 app.post('/api/admin/logout', adminAuthMiddleware.logout);
+app.use('/api/admin/analytics', adminAuth, analyticsRouter);
 
 app.get('/api/admin/events', adminAuth, async (req, res) => {
   return res.json({ events: await listEventsStore() });
