@@ -10,7 +10,7 @@ import crypto from 'crypto';
 import { sendWelcomeVerificationEmail } from './services/emailService.js';
 import { ZodError } from 'zod';
 import { normalizeFormSubmission } from './validators/formSchemas.js';
-import * as adminAuthMiddleware from './middleware/adminAuthMiddleware.js';
+import { adminAuthMiddleware } from './middleware/adminAuthMiddleware.js';
 import analyticsRouter from './routes/analytics.js';
 
 const __filename = fileURLToPath(import.meta.url);
