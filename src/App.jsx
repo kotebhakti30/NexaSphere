@@ -86,6 +86,7 @@ function Cursor() {
     
     hovering:false,
     clicking:false,
+    visible: true,
     raf:null
   });
 
@@ -104,8 +105,25 @@ function Cursor() {
       s.hovering = !!(e.target.closest('button,a,[role="button"],[tabindex]'));
     };
 
+
+    const onMouseLeave = () => {
+      s.visible = false;
+      if (orbRef.current) orbRef.current.style.display = 'none';
+      if (trailRef.current) trailRef.current.style.display = 'none';
+      if (glowRef.current) glowRef.current.style.display = 'none';
+    };
+    
+    const onMouseEnter = () => {
+      s.visible = true;
+      if (orbRef.current) orbRef.current.style.display = 'block';
+      if (trailRef.current) trailRef.current.style.display = 'block';
+      if (glowRef.current) glowRef.current.style.display = 'block';
+    };
+
     const tick = () => {
-      
+
+      const opacity = s.visible ? (s.hovering ? 0.95 : 0.82) : 0;
+
       s.ox += (s.mx - s.ox) * 1.00;
       s.oy += (s.my - s.oy) * 1.00;
 
@@ -118,24 +136,23 @@ function Cursor() {
       const fy = s.oy + s.floatY;
 
       const scale = s.clicking ? 0.7 : s.hovering ? 1.55 : 1;
-      const opacity = s.hovering ? 0.95 : 0.82;
 
-      if (orbRef.current) {
-        orbRef.current.style.left    = s.ox + 'px';
-        orbRef.current.style.top     = fy  + 'px';
-        orbRef.current.style.transform = `translate(-50%,-50%) scale(${scale})`;
-        orbRef.current.style.opacity = opacity;
-      }
-      if (trailRef.current) {
-        trailRef.current.style.left  = s.ox + 'px';
-        trailRef.current.style.top   = s.oy + s.floatY * 0.4 + 'px';
-        trailRef.current.style.opacity = s.hovering ? 0 : 0.35;
-      }
-      if (glowRef.current) {
-        glowRef.current.style.left = s.mx + 'px';
-        glowRef.current.style.top  = s.my + 'px';
-      }
-
+    if (orbRef.current) {
+      orbRef.current.style.left = s.ox + 'px';
+      orbRef.current.style.top = fy + 'px';
+      orbRef.current.style.transform = `translate(-50%,-50%) scale(${scale})`;
+      orbRef.current.style.opacity = s.visible ? (s.hovering ? 0.95 : 0.82) : 0;
+    }
+    if (trailRef.current) {
+      trailRef.current.style.left = s.ox + 'px';
+      trailRef.current.style.top = s.oy + s.floatY * 0.4 + 'px';
+      trailRef.current.style.opacity = s.visible ? (s.hovering ? 0 : 0.35) : 0; 
+    }
+    if (glowRef.current) {
+      glowRef.current.style.left = s.mx + 'px';
+      glowRef.current.style.top = s.my + 'px';
+      glowRef.current.style.opacity = s.visible ? 1 : 0; 
+    }
       s.raf = requestAnimationFrame(tick);
     };
 
@@ -143,6 +160,8 @@ function Cursor() {
     window.addEventListener('mousedown', onDown);
     window.addEventListener('mouseup',   onUp);
     window.addEventListener('mouseover', onOver,  { passive:true });
+    document.documentElement.addEventListener('mouseleave', onMouseLeave);
+    document.documentElement.addEventListener('mouseenter', onMouseEnter);
     s.raf = requestAnimationFrame(tick);
 
     return () => {
@@ -152,6 +171,8 @@ function Cursor() {
       window.removeEventListener('mousedown', onDown);
       window.removeEventListener('mouseup',   onUp);
       window.removeEventListener('mouseover', onOver);
+      document.documentElement.removeEventListener('mouseleave', onMouseLeave);
+      document.documentElement.removeEventListener('mouseenter', onMouseEnter);
     };
   }, []);
 
