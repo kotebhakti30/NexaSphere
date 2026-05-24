@@ -48,6 +48,8 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").authenticated()
                         .requestMatchers("/api/admin/login").permitAll()
                         .requestMatchers("/api/content/**").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/admin/**").authenticated()
                         .anyRequest().permitAll()
                 )
