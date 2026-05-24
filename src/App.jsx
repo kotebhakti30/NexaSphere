@@ -35,9 +35,11 @@ import EventsPage          from './pages/events/EventsPage';
 import AboutPage           from './pages/about/AboutPage';
 import TeamPage            from './pages/team/TeamPage';
 import ContactPage         from './pages/contact/ContactPage';
-import RecruitmentPage     from './pages/recruitment/RecruitmentPage';
-import MembershipPage      from './pages/membership/MembershipPage';
-import AdminPage           from './pages/admin/AdminPage';
+import dynamic from 'next/dynamic';
+
+const RecruitmentPage = dynamic(() => import('./pages/recruitment/RecruitmentPage'), { ssr: false });
+const MembershipPage = dynamic(() => import('./pages/membership/MembershipPage'), { ssr: false });
+const AdminPage = dynamic(() => import('./pages/admin/AdminPage'), { ssr: false });
 import RoadmapsPage        from './pages/roadmaps/RoadmapsPage';
 import ProjectsPage        from './pages/projects/ProjectsPage';
 import CollabPage          from './pages/collab/CollabPage';
@@ -284,14 +286,26 @@ export default function App() {
     return () => { alive = false; };
   }, []);
 
-  useEffect(()=>{
+  useEffect(() => {
     const btn = document.getElementById('back-to-top');
     if (!btn) return;
-    const fn = () => btn.classList.toggle('visible', window.scrollY > 400);
-    window.addEventListener('scroll', fn, { passive:true });
-    btn.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
-    return () => window.removeEventListener('scroll', fn);
-  }, []);
+
+    const handleScroll = () => {
+      btn.classList.toggle('visible', window.scrollY > 400);
+    };
+
+    const handleBackToTop = () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    btn.addEventListener('click', handleBackToTop);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      btn.removeEventListener('click', handleBackToTop);
+    };
+  }, [cinDone]);
 
   useEffect(()=>{
     if (page) return;
