@@ -43,6 +43,7 @@ const MembershipPage = dynamic(() => import('./pages/membership/MembershipPage')
 const AdminPage = dynamic(() => import('./pages/admin/AdminPage'), { ssr: false });
 import RoadmapsPage        from './pages/roadmaps/RoadmapsPage';
 import ProjectsPage        from './pages/projects/ProjectsPage';
+import CertificateVerifyPage from './pages/certificates/CertificateVerifyPage';
 import CollabPage          from './pages/collab/CollabPage';
 import PortfolioBuilder    from './components/portfolio/PortfolioBuilder';
 import PublicPortfolio     from './pages/portfolio/PublicPortfolio';
@@ -225,6 +226,22 @@ function Cursor() {
 }
 
 export default function App() {
+  /* ── Certificate verify route detection ── */
+  const verifyCertId = (() => {
+    const path = window.location.pathname;
+    const m = path.match(/^\/verify\/([A-Za-z0-9_%-]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  })();
+
+  if (verifyCertId) {
+    return (
+      <CertificateVerifyPage
+        certificateId={verifyCertId}
+        onGoHome={() => { window.history.pushState({}, '', '/'); window.location.reload(); }}
+      />
+    );
+  }
+
   const [cinDone,    setCinDone]    = useState(false);
   const [activeTab,  setActiveTab]  = useState('Home');
   const [mobile,     setMobile]     = useState(window.innerWidth <= 768);
