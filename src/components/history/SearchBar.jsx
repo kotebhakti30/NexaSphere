@@ -53,6 +53,7 @@ const SearchBar = ({ onSelectPrompt, workspace = 'default' }) => {
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => query && setShowResults(true)}
+          aria-label="Search saved conversations"
         />
         {isSearching && <span className="search-spinner">⟳</span>}
         {query && (
@@ -63,6 +64,7 @@ const SearchBar = ({ onSelectPrompt, workspace = 'default' }) => {
               setResults([]);
               setShowResults(false);
             }}
+            aria-label="Clear conversation search"
           >
             ✕
           </button>

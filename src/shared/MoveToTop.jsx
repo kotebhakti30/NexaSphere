@@ -26,7 +26,7 @@ function MoveToTop(){
         <>
           {
             showButton && (
-                <button className="move-to-top" onClick={scrollToTop}>
+                <button className="move-to-top" onClick={scrollToTop} aria-label="Scroll to top">
                     ↑
                 </button>
             )

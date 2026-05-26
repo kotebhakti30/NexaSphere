@@ -77,6 +77,7 @@ const PromptHistorySidebar = ({ isOpen, onSelectPrompt, currentWorkspace = 'defa
           value={selectedWorkspace}
           onChange={(e) => setSelectedWorkspace(e.target.value)}
           className="workspace-select"
+          aria-label="Filter conversation history by workspace"
         >
           {workspaces.map((ws) => (
             <option key={ws.id} value={ws.id}>
@@ -112,6 +113,7 @@ const PromptHistorySidebar = ({ isOpen, onSelectPrompt, currentWorkspace = 'defa
                   className="action-btn pin-btn"
                   title={prompt.pinned ? 'Unpin' : 'Pin'}
                   onClick={(e) => handlePinPrompt(e, prompt.id)}
+                  aria-label={`${prompt.pinned ? 'Unpin' : 'Pin'} conversation: ${prompt.userPrompt.substring(0, 50)}`}
                 >
                   {prompt.pinned ? '📌' : '📍'}
                 </button>
@@ -119,6 +121,7 @@ const PromptHistorySidebar = ({ isOpen, onSelectPrompt, currentWorkspace = 'defa
                   className="action-btn delete-btn"
                   title="Delete"
                   onClick={(e) => handleDeletePrompt(e, prompt.id)}
+                  aria-label={`Delete conversation: ${prompt.userPrompt.substring(0, 50)}`}
                 >
                   🗑️
                 </button>
