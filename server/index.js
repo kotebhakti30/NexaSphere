@@ -49,7 +49,7 @@ app.use(
           .map((s) => s.trim())
           .filter(Boolean)
       : true,
-    credentials: false,
+    credentials: true,
   }),
 );
 app.use(express.json({ limit: "512kb" }));
@@ -910,6 +910,9 @@ app.delete(
 
 app.post("/api/admin/login", authRateLimiter, adminAuthMiddleware.login);
 app.post("/api/admin/logout", adminAuthMiddleware.logout);
+app.get("/api/admin/me", adminAuth, (req, res) => {
+  return res.json({ username: req.adminSession.username });
+});
 app.use("/api/admin/analytics", adminAuth, analyticsRouter);
 app.use("/api/admin/metrics", adminAuth, adminStreamRouter);
 
