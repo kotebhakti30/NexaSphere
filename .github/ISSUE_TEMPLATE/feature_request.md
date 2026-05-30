@@ -1,27 +1,19 @@
 ---
-name: Feature request
-about: Suggest an idea or improvement for NexaSphere
-title: "[Feature]: "
-labels: enhancement
-assignees: ""
+name: Feature Request
+about: Suggest an idea for this project
+title: '[Feature] '
+labels: 'enhancement'
+assignees: ''
 ---
 
-## Summary
+### Is your feature request related to a problem? Please describe.
+A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
 
-Describe the feature or improvement you would like to see.
+### Describe the solution you'd like
+A clear and concise description of what you want to happen.
 
-## Problem
+### Describe alternatives you've considered
+A clear and concise description of any alternative solutions or features you've considered.
 
-Explain the problem this feature would solve.
-
-## Proposed Solution
-
-Describe how you think the feature should work.
-
-## Alternatives Considered
-
-List any alternative approaches you considered.
-
-## Additional Context
-
-Add mockups, screenshots, references, or extra details here.
+### Additional Context
+Add any other context or screenshots about the feature request here.
