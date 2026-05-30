@@ -518,6 +518,62 @@ export const api = {
   membership: {
     getAll: () => fetchWithAuth('/api/admin/membership'),
   },
+
+  certificates: {
+    getTemplates: () => fetchWithAuth('/api/admin/certificates/templates'),
+    createTemplate: async (template) => {
+      const result = await fetchWithAuth('/api/admin/certificates/templates', {
+        method: 'POST',
+        body: JSON.stringify(template),
+      });
+      eventEmitter.emit(EVENTS.NOTIFY, { type: 'success', message: 'Template saved' });
+      return result;
+    },
+    updateTemplate: async (id, template) => {
+      const result = await fetchWithAuth(`/api/admin/certificates/templates/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(template),
+      });
+      eventEmitter.emit(EVENTS.NOTIFY, { type: 'success', message: 'Template updated' });
+      return result;
+    },
+    deleteTemplate: async (id) => {
+      await fetchWithAuth(`/api/admin/certificates/templates/${id}`, { method: 'DELETE' });
+      eventEmitter.emit(EVENTS.NOTIFY, { type: 'success', message: 'Template deleted' });
+    },
+    getParticipants: (eventId) => fetchWithAuth(`/api/admin/certificates/participants/${eventId}`),
+    addParticipant: async (eventId, participant) => {
+      return fetchWithAuth(`/api/admin/certificates/participants/${eventId}`, {
+        method: 'POST',
+        body: JSON.stringify(participant),
+      });
+    },
+    bulkAddParticipants: async (eventId, participants) => {
+      return fetchWithAuth(`/api/admin/certificates/participants/${eventId}/bulk`, {
+        method: 'POST',
+        body: JSON.stringify(participants),
+      });
+    },
+    generate: async (data) => {
+      const result = await fetchWithAuth('/api/admin/certificates/generate', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      eventEmitter.emit(EVENTS.NOTIFY, {
+        type: 'success',
+        message: `Generated ${result.generated} certificate(s)`,
+      });
+      return result;
+    },
+    getAll: () => fetchWithAuth('/api/admin/certificates'),
+    revoke: async (id) => {
+      const result = await fetchWithAuth(`/api/admin/certificates/${id}/revoke`, {
+        method: 'PATCH',
+      });
+      eventEmitter.emit(EVENTS.NOTIFY, { type: 'success', message: 'Certificate revoked' });
+      return result;
+    },
+  },
 };
 
 export { auth, eventEmitter, EVENTS };
