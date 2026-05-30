@@ -550,6 +550,19 @@ npm install
 npm run dev   # Runs on http://localhost:5001
 ```
 
+### 🔐 Admin Login Credentials
+
+> **Organization:** NexaSphere Admin — GL Bajaj Group of Institutions
+
+| Field | Value |
+|-------|-------|
+| **Email** | `nexasphere@glbajajgroup.org` |
+| **Password** | `admin@123` |
+
+> [!IMPORTANT]
+> These credentials are configured via `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables on the Java backend.
+> For production deployments, set these as secure env vars on your hosting platform (Railway, Render, etc.) — **never commit them to the repository**.
+
 See [admin-dashboard/README.md](admin-dashboard/README.md) for complete setup instructions.
 
 ### Deploying on Vercel
