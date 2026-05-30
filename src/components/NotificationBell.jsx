@@ -145,7 +145,7 @@ export default function NotificationBell() {
               borderBottom: '1px solid rgba(255,255,255,0.07)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c1)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c1)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
@@ -186,6 +186,7 @@ export default function NotificationBell() {
                     whileTap={{ scale: 0.95 }}
                     onClick={clearAll}
                     title="Clear all"
+                    aria-label="Clear all notifications"
                     style={{
                       background: 'rgba(255,255,255,0.07)', border: 'none',
                       borderRadius: '8px', padding: '5px 8px',
@@ -193,13 +194,14 @@ export default function NotificationBell() {
                       display: 'flex', alignItems: 'center',
                     }}
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={13} aria-hidden="true" />
                   </motion.button>
                 )}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={closePanel}
+                  aria-label="Close notifications panel"
                   style={{
                     background: 'rgba(255,255,255,0.07)', border: 'none',
                     borderRadius: '8px', padding: '5px 8px',
@@ -207,7 +209,7 @@ export default function NotificationBell() {
                     display: 'flex', alignItems: 'center',
                   }}
                 >
-                  <X size={13} />
+                  <X size={13} aria-hidden="true" />
                 </motion.button>
               </div>
             </div>
@@ -218,7 +220,7 @@ export default function NotificationBell() {
                 <div style={{
                   padding: '44px 20px', textAlign: 'center', color: 'var(--t2)',
                 }}>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(204,17,17,0.3)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '10px' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(204,17,17,0.3)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '10px' }} aria-hidden="true">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                   </svg>
@@ -232,6 +234,7 @@ export default function NotificationBell() {
                       key={n.id}
                       onClick={() => markAsRead(n.id)}
                       whileHover={{ background: 'rgba(204,17,17,0.06)' }}
+                      aria-label={n.isRead ? `Open notification: ${n.title}` : `Mark notification as read: ${n.title}`}
                       style={{
                         width: '100%', textAlign: 'left',
                         background: n.isRead ? 'none' : 'rgba(204,17,17,0.04)',

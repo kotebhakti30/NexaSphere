@@ -58,6 +58,7 @@ const PinnedChats = ({ onSelectPrompt, workspace = 'default' }) => {
               className="unpin-btn"
               title="Unpin"
               onClick={(e) => handleUnpin(e, prompt.id)}
+              aria-label={`Unpin conversation: ${prompt.userPrompt.substring(0, 45)}`}
             >
               ✕
             </button>

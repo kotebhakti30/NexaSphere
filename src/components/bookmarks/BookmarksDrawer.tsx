@@ -82,7 +82,7 @@ export default function BookmarksDrawer({ isOpen, onClose, onNavigate }: Bookmar
               borderBottom: '1px solid rgba(255,255,255,0.1)',
             }}>
               <h2 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--c1)' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--c1)' }} aria-hidden="true">
                   <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                 </svg>
                 Saved for Later
@@ -92,7 +92,7 @@ export default function BookmarksDrawer({ isOpen, onClose, onNavigate }: Bookmar
                 style={{ background: 'transparent', border: 'none', color: 'var(--t2)', cursor: 'pointer', padding: '4px' }}
                 aria-label="Close bookmarks"
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
@@ -103,7 +103,7 @@ export default function BookmarksDrawer({ isOpen, onClose, onNavigate }: Bookmar
             <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
               {bookmarks.length === 0 ? (
                 <div style={{ textAlign: 'center', color: 'var(--t2)', marginTop: '40px' }}>
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '16px' }}>
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '16px' }} aria-hidden="true">
                     <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                   </svg>
                   <p>No bookmarks yet.</p>
@@ -172,8 +172,9 @@ export default function BookmarksDrawer({ isOpen, onClose, onNavigate }: Bookmar
                                 justifyContent: 'center',
                               }}
                               title="Remove"
+                              aria-label={`Remove ${item.title} from saved bookmarks`}
                             >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                               </svg>
                             </button>

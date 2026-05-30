@@ -74,6 +74,7 @@ export function LoginPage() {
                   justifyContent: "center",
                 }}
                 title={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
                   <svg

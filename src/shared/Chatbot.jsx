@@ -117,13 +117,14 @@ const Chatbot = () => {
   return (
     <div className="ns-chatbot-wrapper">
       {!isOpen ? (
-        <button 
-          className="chat-trigger-btn" 
+        <button
+          className="chat-trigger-btn"
           onClick={() => setIsOpen(true)}
+          aria-label="Open Nexa AI chat"
           aria-expanded={isOpen}
           aria-controls="chatbot-window"
         >
-          <div className="pulse-ring"></div>
+          <div className="pulse-ring" aria-hidden="true"></div>
           💬
         </button>
       ) : (
@@ -140,6 +141,7 @@ const Chatbot = () => {
                 className="history-toggle-btn"
                 onClick={() => setShowSidebar(!showSidebar)}
                 title="Toggle History"
+                aria-label={showSidebar ? 'Close conversation history' : 'Open conversation history'}
                 aria-expanded={showSidebar}
                 aria-controls="prompt-history-sidebar"
               >
@@ -156,9 +158,7 @@ const Chatbot = () => {
                 <span className="status-dot"></span>
                 <span>NEXA-AI</span>
               </div>
-              <button className="close-btn" onClick={() => setIsOpen(false)}>
-                ×
-              </button>
+              <button className="close-btn" onClick={() => setIsOpen(false)} aria-label="Close Nexa AI chat">×</button>
             </div>
 
             <div className="chat-content">
@@ -186,6 +186,7 @@ const Chatbot = () => {
                 value={currentWorkspace}
                 onChange={(e) => setCurrentWorkspace(e.target.value)}
                 className="workspace-selector-inline"
+                aria-label="Select chat workspace"
               >
                 <option value="default">General</option>
                 <option value="coding">Coding & Debug</option>
@@ -202,8 +203,9 @@ const Chatbot = () => {
                 onClick={handleSend}
                 className="send-btn"
                 disabled={isSending}
+                aria-label={isSending ? 'Sending message' : 'Send message to Nexa AI'}
               >
-                {isSending ? "..." : "🚀"}
+                {isSending ? '...' : '🚀'}
               </button>
             </div>
           </div>
