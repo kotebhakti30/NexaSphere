@@ -188,12 +188,16 @@ jobs:
 
       - name: Verify DATABASE_MIGRATIONS.md exists
         run: |
-          if [ ! -f DATABASE_MIGRATIONS.md ]; then
+          if [ -f DATABASE_MIGRATIONS.md ]; then
+            echo "✓ DATABASE_MIGRATIONS.md found at root"
+            wc -l DATABASE_MIGRATIONS.md
+          elif [ -f docs/DATABASE_MIGRATIONS.md ]; then
+            echo "✓ DATABASE_MIGRATIONS.md found in docs/"
+            wc -l docs/DATABASE_MIGRATIONS.md
+          else
             echo "❌ DATABASE_MIGRATIONS.md not found"
             exit 1
           fi
-          echo "✓ DATABASE_MIGRATIONS.md found"
-          wc -l DATABASE_MIGRATIONS.md
 
       - name: Verify migration directories exist
         run: |

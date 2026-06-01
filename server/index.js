@@ -1,23 +1,15 @@
-import { env } from './config/env.js';
 import 'dotenv/config';
 import helmet from 'helmet';
 import express from 'express';
-import { EventEmitter } from 'events';
 import cors from 'cors';
 import morgan from 'morgan';
-import { google } from 'googleapis';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import crypto from 'crypto';
-import { sendWelcomeVerificationEmail } from './services/emailService.js';
-import { ZodError } from 'zod';
-import { normalizeFormSubmission } from './validators/formSchemas.js';
 import { adminAuthMiddleware } from './middleware/adminAuthMiddleware.js';
 import analyticsRouter from './routes/analytics.js';
-import { initializeSocketIO, emitToRoom, getRoom } from './config/socket.js';
+import { initializeSocketIO } from './config/socket.js';
 import adminStreamRouter from './routes/adminStream.js';
-import { broadcastSSEEvent } from './services/sseService.js';
 import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
 import { performanceMonitor } from './middleware/performanceMonitor.js';
@@ -33,7 +25,6 @@ import {
   validateLimiters,
 } from './middleware/rateLimiter.js';
 import { portfolioRepository } from './repositories/portfolioRepository.js';
-import { Mutex } from 'async-mutex';
 import { getPublicAppUrl } from './utils/publicAppUrl.js';
 import * as eventsController from './controllers/eventsController.js';
 import * as activityEventsController from './controllers/activityEventsController.js';
@@ -42,8 +33,8 @@ import * as formsController from './controllers/formsController.js';
 import { eventsService } from './services/eventsService.js';
 import { coreTeamService } from './services/coreTeamService.js';
 import notificationsService from './services/notificationsService.js';
+import { supabaseRequest, HAS_SUPABASE } from './storage/supabaseClient.js';
 
-// Fail fast on startup if any rate limiter failed to export correctly.
 validateLimiters();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -69,11 +60,7 @@ app.use(morgan('combined'));
 app.use(performanceMonitor);
 
 // Global API rate limiter — protects all /api routes from request flooding
-// Previously missing: the middleware was correctly defined in rateLimiter.js
-// but never mounted, leaving every API endpoint without baseline protection.
 app.use('/api', apiRateLimiter);
-
-const adminEvents = new EventEmitter();
 
 function requestLogger(req, res, next) {
   const start = process.hrtime.bigint();
@@ -106,17 +93,11 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'nexasphere-api', timestamp: new Date().toISOString() });
 });
 
-// Mount monitoring + API documentation routes (previously implemented but never registered).
+// Mount monitoring + API documentation routes
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api', documentationRouter);
 
 const adminAuth = adminAuthMiddleware.requireAdmin;
-adminEvents.on('CORE_TEAM_MEMBER_ADDED', (event) =>
-  console.log(`[EVENT] CORE_TEAM_MEMBER_ADDED:`, event)
-);
-adminEvents.on('CORE_TEAM_MEMBER_REMOVED', (event) =>
-  console.log(`[EVENT] CORE_TEAM_MEMBER_REMOVED:`, event)
-);
 
 const defaultContent = {
   events: [
@@ -137,17 +118,6 @@ const defaultContent = {
   coreTeam: [],
 };
 
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_SERVICE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
-export const HAS_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_SERVICE_KEY);
-
-function requiredEnv(name) {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing environment variable: ${name}`);
-  return v;
-}
-
 function requiredStrongPassword(name) {
   const value = String(process.env[name] || '').trim();
   if (!value) {
@@ -167,14 +137,9 @@ function requiredStrongPassword(name) {
   return value;
 }
 
-// Enforce admin event password format validation if it's set
 const ADMIN_EVENT_PASSWORD = requiredStrongPassword('ADMIN_EVENT_PASSWORD');
 
 getPublicAppUrl();
-
-function normalizePrivateKey(k) {
-  return k.includes('\\n') ? k.replace(/\\n/g, '\n') : k;
-}
 
 async function ensureContentFile() {
   const dir = path.dirname(CONTENT_FILE);
@@ -184,182 +149,6 @@ async function ensureContentFile() {
   } catch {
     await fs.writeFile(CONTENT_FILE, JSON.stringify(defaultContent, null, 2), 'utf8');
   }
-}
-const fileMutex = new Mutex();
-
-export async function runWithFileLock(callback) {
-  return await fileMutex.runExclusive(callback);
-}
-
-async function readContent() {
-  await ensureContentFile();
-  const raw = await fs.readFile(CONTENT_FILE, 'utf8');
-  return JSON.parse(raw);
-}
-
-async function writeContent(content) {
-  await ensureContentFile();
-  await fs.writeFile(CONTENT_FILE, JSON.stringify(content, null, 2), 'utf8');
-}
-
-let contentLock = Promise.resolve();
-
-function withContentLock(fn) {
-  let release;
-  const next = new Promise((resolve) => {
-    release = resolve;
-  });
-  const current = contentLock;
-  contentLock = next;
-  return current.then(() => fn()).finally(() => release());
-}
-
-export async function supabaseRequest(pathname, { method = 'GET', body } = {}) {
-  if (!HAS_SUPABASE) throw new Error('Supabase is not configured');
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathname}`, {
-    method,
-    headers: {
-      apikey: SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-      'Content-Type': 'application/json',
-      Prefer: method === 'GET' ? 'count=exact' : 'return=representation',
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Supabase error (${res.status}): ${text}`);
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : [];
-}
-
-// Paginated variant: appends LIMIT/OFFSET to a PostgREST GET request and reads
-// the total row count from the Content-Range response header (sent when
-// Prefer: count=exact is set). Returns { rows, total } instead of a bare array.
-async function supabasePaginatedRequest(pathname, page, limit) {
-  if (!HAS_SUPABASE) throw new Error('Supabase is not configured');
-  const offset = (page - 1) * limit;
-  const separator = pathname.includes('?') ? '&' : '?';
-  const url = `${SUPABASE_URL}/rest/v1/${pathname}${separator}limit=${limit}&offset=${offset}`;
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: {
-      apikey: SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-      'Content-Type': 'application/json',
-      Prefer: 'count=exact',
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Supabase error (${res.status}): ${text}`);
-  }
-  const text = await res.text();
-  const rows = text ? JSON.parse(text) : [];
-  // Content-Range format from PostgREST: "0-19/150" or "*/0" when empty
-  const contentRange = res.headers.get('content-range') || '';
-  const totalMatch = contentRange.match(/\/(\d+)$/);
-  const total = totalMatch ? parseInt(totalMatch[1], 10) : rows.length;
-  return { rows, total };
-}
-
-// Parses ?page and ?limit from a request query object, clamps to safe bounds,
-// and returns normalised integers. Defaults: page=1, limit=20, cap=100.
-function parsePagination(query) {
-  const page = Math.max(1, parseInt(query.page, 10) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(query.limit, 10) || 20));
-  return { page, limit };
-}
-
-function toSafeString(value, max = 4000) {
-  return String(value ?? '')
-    .trim()
-    .slice(0, max);
-}
-
-function validateWhatsApp(str) {
-  const v = String(str || '').trim();
-  if (!/^\d{10}$/.test(v)) throw new Error('WhatsApp must be exactly 10 digits');
-  return v;
-}
-
-function validateSection(str) {
-  const v = String(str || '')
-    .trim()
-    .toUpperCase();
-  if (!/^[A-Z]$/.test(v)) throw new Error('Section must be a single letter (A-Z)');
-  return v;
-}
-
-function sanitizeEvent(input = {}) {
-  const status = input.status === 'upcoming' ? 'upcoming' : 'completed';
-  const tags = Array.isArray(input.tags)
-    ? input.tags
-        .map((t) => toSafeString(t, 40))
-        .filter(Boolean)
-        .slice(0, 12)
-    : String(input.tags || '')
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .slice(0, 12);
-
-  return {
-    id:
-      toSafeString(input.id || input.shortName || input.name, 80)
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '') || `event-${Date.now()}`,
-    name: toSafeString(input.name, 120),
-    shortName: toSafeString(input.shortName || input.name, 60),
-    date: toSafeString(input.date, 80),
-    description: toSafeString(input.description, 1200),
-    status,
-    icon: toSafeString(input.icon || 'Pin', 32),
-    tags,
-  };
-}
-
-function normalizePhone(value) {
-  return String(value || '').replace(/[^\d]/g, '');
-}
-
-async function listEventsStore({ page = 1, limit = 20 } = {}) {
-  if (HAS_SUPABASE) {
-    const { rows, total } = await supabasePaginatedRequest(
-      'events?select=*&order=created_at.desc',
-      page,
-      limit
-    );
-    return {
-      events: rows.map((r) =>
-        sanitizeEventRecord({
-          id: r.id,
-          name: r.name,
-          shortName: r.short_name || r.shortName || r.name,
-          date: r.date_text || r.date,
-          description: r.description,
-          status: r.status,
-          icon: r.icon || 'Pin',
-          tags: Array.isArray(r.tags) ? r.tags : [],
-          createdAt: r.created_at,
-          updatedAt: r.updated_at,
-        })
-      ),
-      total,
-    };
-  }
-  const content = await readContent();
-  const all = (content.events || []).map((event) => sanitizeEventRecord(event));
-  const total = all.length;
-  const start = (page - 1) * limit;
-  return { events: all.slice(start, start + limit), total };
-}
-
-function sanitizeEventRecord(event) {
-  return event;
 }
 
 // REST Endpoints
@@ -383,6 +172,12 @@ app.get('/healthz', async (req, res) => {
 // Event channels/content
 app.get('/api/content/events', eventsController.listEvents);
 app.get('/api/content/activity-events/:activityKey', activityEventsController.listActivityEvents);
+app.post('/api/content/activity-events/:activityKey', activityEventsController.addActivityEvent);
+app.delete(
+  '/api/content/activity-events/:activityKey/:eventId',
+  activityEventsController.deleteActivityEvent
+);
+
 // Admin Auth Endpoints
 app.post('/api/admin/login', authRateLimiter, adminAuthMiddleware.login);
 app.post('/api/admin/logout', adminAuthMiddleware.logout);
@@ -402,12 +197,12 @@ app.get('/api/content/team', async (req, res) => {
     const members = (rawMembers || []).map((m) => {
       let email = m.email || null;
       if (email && !email.toLowerCase().endsWith('@glbajajgroup.org')) {
-        email = null; // hide personal emails entirely
+        email = null;
       }
       return {
         ...m,
         email,
-        whatsapp: 'https://chat.whatsapp.com/FhpJEaod2g419jFMfqrhGZ', // official community link
+        whatsapp: 'https://chat.whatsapp.com/FhpJEaod2g419jFMfqrhGZ',
       };
     });
     return res.json({ members });
@@ -415,133 +210,6 @@ app.get('/api/content/team', async (req, res) => {
     return res.status(500).json({ error: e?.message || 'Failed to load core team' });
   }
 });
-
-app.get('/api/content/core-team', async (req, res) => {
-  try {
-    const rawMembers = await coreTeamService.listMembers();
-    const members = (rawMembers || []).map((m) => {
-      let email = m.email || null;
-      if (email && !email.toLowerCase().endsWith('@glbajajgroup.org')) {
-        email = null; // hide personal emails entirely
-      }
-      return {
-        ...m,
-        email,
-        whatsapp: 'https://chat.whatsapp.com/FhpJEaod2g419jFMfqrhGZ', // official community link
-      };
-    });
-    return res.json({ members });
-  } catch (e) {
-    return res.status(500).json({ error: e?.message || 'Failed to load core team' });
-  }
-});
-
-app.post('/api/content/activity-events/:activityKey', activityAuthRateLimiter, async (req, res) => {
-  try {
-    const activityKey = toSafeString(req.params.activityKey, 80);
-    const body = req.body || {};
-    const ip = String(req.ip || req.headers['x-forwarded-for'] || 'unknown')
-      .split(',')[0]
-      .trim();
-
-    const lockout = checkActivityAuthLockout(ip);
-    if (lockout) {
-      return res.status(429).json({
-        error: 'Too many failed attempts. Please try again later.',
-      });
-    }
-
-    const auth = {
-      name: body.name,
-      email: body.email,
-      phone: body.phone,
-      password: body.password,
-    };
-    if (!(await canManageActivityEvent(auth))) {
-      recordFailedActivityAuth(ip);
-      return res.status(401).json({
-        error: 'Unauthorized. Core team details or password did not match.',
-      });
-    }
-    clearActivityAuthAttempts(ip);
-
-    const event = {
-      id: `manual-${Date.now()}`,
-      name: toSafeString(body.eventName, 120),
-      date: toSafeString(body.eventDate, 80),
-      tagline: toSafeString(body.eventTagline, 240),
-      description: toSafeString(body.eventDescription, 1200),
-      status: 'completed',
-      createdAt: new Date().toISOString(),
-      createdBy: {
-        name: toSafeString(body.name, 120),
-        email: toSafeString(body.email, 140),
-        phone: normalizePhone(body.phone),
-      },
-    };
-    if (!event.name || !event.date || !event.description) {
-      return res.status(400).json({ error: 'Event name, date and description are required.' });
-    }
-
-    const content = await readContent();
-    content.activityEvents = content.activityEvents || {};
-    content.activityEvents[activityKey] = content.activityEvents[activityKey] || [];
-    content.activityEvents[activityKey].unshift(event);
-    await writeContent(content);
-    return res.status(201).json({ ok: true, event });
-  } catch (e) {
-    return res.status(500).json({ error: e?.message || 'Unable to add activity event' });
-  }
-});
-
-app.delete(
-  '/api/content/activity-events/:activityKey/:eventId',
-  activityAuthRateLimiter,
-  async (req, res) => {
-    try {
-      const activityKey = toSafeString(req.params.activityKey, 80);
-      const eventId = toSafeString(req.params.eventId, 120);
-      const body = req.body || {};
-      const ip = String(req.ip || req.headers['x-forwarded-for'] || 'unknown')
-        .split(',')[0]
-        .trim();
-
-      const lockout = checkActivityAuthLockout(ip);
-      if (lockout) {
-        return res.status(429).json({
-          error: 'Too many failed attempts. Please try again later.',
-        });
-      }
-
-      const auth = {
-        name: body.name,
-        email: body.email,
-        phone: body.phone,
-        password: body.password,
-      };
-      if (!(await canManageActivityEvent(auth))) {
-        recordFailedActivityAuth(ip);
-        return res.status(401).json({
-          error: 'Unauthorized. Core team details or password did not match.',
-        });
-      }
-      clearActivityAuthAttempts(ip);
-
-      const content = await readContent();
-      content.activityEvents = content.activityEvents || {};
-      const list = content.activityEvents[activityKey] || [];
-      const next = list.filter((e) => e.id !== eventId);
-      if (next.length === list.length) {
-        return res.status(404).json({ error: 'Event not found in manual activity events.' });
-      }
-      content.activityEvents[activityKey] = next;
-      await writeContent(content);
-      return res.json({ ok: true });
-    } catch (e) {
-      return res.status(500).json({ error: e?.message || 'Unable to delete activity event' });
-    }
-  }
-);
 
 // Admin Team Management
 app.get('/api/admin/core-team', adminAuth, coreTeamController.adminListCoreTeamMembers);
@@ -598,6 +266,7 @@ app.get('/api/admin/me', adminAuth, (req, res) => {
 
 // Real-time Push Subscriber channels
 const pushSubscriptions = new Set();
+
 app.post('/api/notifications/subscribe', (req, res) => {
   try {
     const { subscription } = req.body;
@@ -722,7 +391,7 @@ function recordFailedPasskeyAttempt(username, ip) {
   const entry = failedPasskeyAttempts.get(key) || { count: 0, lockoutUntil: 0 };
   entry.count += 1;
   if (entry.count >= 5) {
-    entry.lockoutUntil = Date.now() + 15 * 60 * 1000; // 15 min lockout
+    entry.lockoutUntil = Date.now() + 15 * 60 * 1000;
     entry.count = 0;
   }
   failedPasskeyAttempts.set(key, entry);
@@ -734,11 +403,8 @@ function clearPasskeyAttempts(username, ip) {
   failedPasskeyAttempts.delete(key);
 }
 
-// Server-side notifications API (simple in-memory store)
-
 app.get('/api/notifications', (req, res) => {
   try {
-    // If user id provided via query or auth, use that; otherwise global
     const userId = req.query.userId || 'global';
     const list = notificationsService.getNotifications(userId);
     return res.json({ notifications: list });
