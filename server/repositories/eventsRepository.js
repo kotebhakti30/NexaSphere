@@ -9,28 +9,40 @@ function mapRow(row) {
     description: row.description,
     status: row.status,
     icon: row.icon,
-    tags: Array.isArray(row.tags) ? row.tags : row.tags ?? [],
+    tags: Array.isArray(row.tags) ? row.tags : (row.tags ?? []),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
-
 export const eventsRepository = {
-  // Returns { rows, total } — rows are the current page, total is the full
-  // count without LIMIT so callers can build pagination metadata.
   async list({ page = 1, limit = 20 } = {}) {
     return withDb(async (client) => {
-      const offset = (page - 1) * limit;
-      const { rows } = await client.query(
-        'select * from events order by created_at desc limit $1 offset $2',
-        [limit, offset],
-      );
-      const countResult = await client.query('select count(*)::int as total from events');
-      const total = countResult.rows[0]?.total ?? 0;
-      return { rows: rows.map(mapRow), total };
+      await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+
+      try {
+        const offset = (page - 1) * limit;
+
+        const { rows } = await client.query(
+          'select * from events order by created_at desc limit $1 offset $2',
+          [limit, offset]
+        );
+
+        const countResult = await client.query('select count(*)::int as total from events');
+
+        const total = countResult.rows[0]?.total ?? 0;
+
+        await client.query('COMMIT');
+
+        return {
+          rows: rows.map(mapRow),
+          total,
+        };
+      } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+      }
     });
   },
-
   async create(event) {
     return withDb(async (client) => {
       const { rows } = await client.query(
@@ -46,7 +58,16 @@ export const eventsRepository = {
            tags=excluded.tags,
            updated_at=now()
          returning *`,
-        [event.id, event.name, event.shortName, event.date, event.description, event.status, event.icon, event.tags]
+        [
+          event.id,
+          event.name,
+          event.shortName,
+          event.date,
+          event.description,
+          event.status,
+          event.icon,
+          event.tags,
+        ]
       );
       return mapRow(rows[0]);
     });
@@ -66,7 +87,16 @@ export const eventsRepository = {
            updated_at = now()
          where id = $1
          returning *`,
-        [id, patch.name ?? null, patch.shortName ?? null, patch.date ?? null, patch.description ?? null, patch.status ?? null, patch.icon ?? null, patch.tags ?? null]
+        [
+          id,
+          patch.name ?? null,
+          patch.shortName ?? null,
+          patch.date ?? null,
+          patch.description ?? null,
+          patch.status ?? null,
+          patch.icon ?? null,
+          patch.tags ?? null,
+        ]
       );
       if (!rows.length) return null;
       return mapRow(rows[0]);
