@@ -42,6 +42,21 @@ const __dirname = path.dirname(__filename);
 const CONTENT_FILE = path.join(__dirname, 'data', 'content.json');
 
 const app = express();
+
+// Trust the first reverse proxy hop (e.g., Vercel, Render, Nginx, Cloudflare)
+// to correctly populate req.ip and securely discard spoofed X-Forwarded-For headers
+const proxyTrust = process.env.TRUST_PROXY || 1;
+app.set(
+  'trust proxy',
+  proxyTrust === 'true'
+    ? true
+    : proxyTrust === 'false'
+      ? false
+      : !isNaN(proxyTrust)
+        ? parseInt(proxyTrust, 10)
+        : proxyTrust
+);
+
 initializeSentry(app);
 
 if (!process.env.CORS_ORIGIN) {
@@ -418,7 +433,7 @@ app.put('/api/portfolio', portfolioRateLimiter, async (req, res) => {
     const body = req.body || {};
     const username = String(body.username || '').trim();
     const passkey = String(body.passkey || '').trim();
-    const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    const ip = req.ip || 'unknown';
 
     if (!username || username.length < 3) {
       return res.status(400).json({ error: 'Username must be at least 3 characters long' });

@@ -72,10 +72,7 @@ function requiredStrongPassword(name) {
 }
 
 function getClientIp(req) {
-  const ip =
-    String(req.ip || req.headers['x-forwarded-for'] || 'unknown')
-      .split(',')[0]
-      .trim() || 'unknown';
+  const ip = String(req.ip || 'unknown').trim();
   // Truncate to maximum 128 characters to prevent extremely large malicious headers from causing memory exhaustion
   return ip.slice(0, 128);
 }
