@@ -6,6 +6,7 @@
 import { Server } from 'socket.io';
 import logger from '../utils/logger.js';
 import { getAdminSession } from '../repositories/adminSessionsRepository.js';
+import { resolveAdminPermissions, getRoomsForPermissions } from './eventPermissions.js';
 
 let io = null;
 const connectedUsers = new Map();
@@ -229,6 +230,7 @@ export function initializeSocketIO(httpServer) {
         if (session) {
           socket.adminSession = session;
           socket.adminAuthenticated = true;
+          socket.adminPermissions = resolveAdminPermissions(session);
         }
       } catch {
         // Auth check is best-effort at connection time
@@ -254,9 +256,20 @@ export function _onConnection(socket) {
 
   logger.info('User connected', { socketId: socket.id, admin: !!socket.adminAuthenticated });
 
-  // Auto-join authenticated admin sockets to admin room
+  // Auto-join authenticated admin sockets to permission-scoped rooms
   if (socket.adminAuthenticated) {
-    socket.join('admin-room');
+    if (!socket.adminPermissions) {
+      socket.adminPermissions = resolveAdminPermissions(socket.adminSession);
+    }
+    const rooms = getRoomsForPermissions(socket.adminPermissions);
+    for (const room of rooms) {
+      socket.join(room);
+    }
+    logger.info('Admin joined scoped rooms', {
+      socketId: socket.id,
+      username: socket.adminSession?.username,
+      rooms,
+    });
   }
 
   // Keep track of identify operations to rate limit floods per-socket (Max 3 events per lifetime)
@@ -463,10 +476,15 @@ export function _onConnection(socket) {
       }
       socket.adminSession = session;
       socket.adminAuthenticated = true;
-      socket.join('admin-room');
+      socket.adminPermissions = resolveAdminPermissions(session);
+      const rooms = getRoomsForPermissions(socket.adminPermissions);
+      for (const room of rooms) {
+        socket.join(room);
+      }
       logger.info('Admin authenticated via socket event', {
         socketId: socket.id,
         username: session.username,
+        rooms,
       });
       socket.emit('admin:authenticated', { success: true });
     } catch (e) {
@@ -562,6 +580,34 @@ export function getRoom(roomType) {
   return rooms[roomType] || null;
 }
 
+/**
+ * Emit an event to the admin role-scoped room(s) that have permission
+ * to receive it.  Falls back to the legacy shared `admin-room` for
+ * `super_admin` so single-admin deployments continue working.
+ *
+ * @param {string|string[]} roles - Role name(s) (e.g. 'membership_admin')
+ * @param {string} eventName - Event name
+ * @param {Object} data - Payload
+ */
+export function emitToRole(roles, eventName, data) {
+  if (!io) return;
+  const list = Array.isArray(roles) ? roles : [roles];
+  const targets = new Set();
+  for (const role of list) {
+    if (role === 'admin' || role === 'super_admin') {
+      targets.add('admin-room');
+      continue;
+    }
+    if (typeof role === 'string' && role.length > 0) {
+      targets.add(`admin-room:${role}`);
+    }
+  }
+  for (const room of targets) {
+    io.to(room).emit(eventName, data);
+  }
+  logger.debug('Emit to role rooms', { rooms: [...targets], event: eventName });
+}
+
 export function _clearConnectedUsers() {
   connectedUsers.clear();
 }
@@ -602,6 +648,7 @@ export default {
   broadcastEvent,
   emitToRoom,
   emitToUser,
+  emitToRole,
   _clearConnectedUsers,
   _clearWorkspaceRoomMembers,
   _clearJoinRoomAttempts,
