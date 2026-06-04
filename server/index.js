@@ -32,6 +32,7 @@ import {
 import { portfolioRepository } from './repositories/portfolioRepository.js';
 import { portfolioContentSchema, portfolioPutSchema } from './validators/portfolioSchemas.js';
 import { searchController } from './controllers/searchController.js';
+import { pushSubscriptionsRepository } from './repositories/pushSubscriptionsRepository.js';
 import { getPublicAppUrl } from './utils/publicAppUrl.js';
 import * as eventsController from './controllers/eventsController.js';
 import * as activityEventsController from './controllers/activityEventsController.js';
@@ -316,8 +317,48 @@ app.get('/api/admin/me', adminAuth, (req, res) => {
   return res.json({ username: req.adminSession.username });
 });
 
-// Real-time Push Subscriber channels
+// Real-time Push Subscriber channels.
+// The in-memory Set is a fast local mirror. When a PostgreSQL database is
+// configured (DATABASE_URL present), subscriptions are also persisted to the
+// push_subscriptions table so they survive server restarts, deploys, and
+// crashes. When no database is configured the store degrades to memory-only,
+// preserving the previous behavior for local development.
 const pushSubscriptions = new Set();
+
+const PUSH_PERSISTENCE_ENABLED = Boolean(process.env.DATABASE_URL);
+
+// Load any previously persisted subscriptions into the in-memory mirror at
+// startup so a restart does not silently drop registered subscribers.
+async function loadPersistedPushSubscriptions() {
+  if (!PUSH_PERSISTENCE_ENABLED) return;
+  try {
+    const rows = await pushSubscriptionsRepository.list({ limit: 10000 });
+    for (const sub of rows) {
+      pushSubscriptions.add(JSON.stringify(sub));
+    }
+    console.log(`Loaded ${rows.length} persisted push subscription(s).`);
+  } catch (err) {
+    console.error('Failed to load persisted push subscriptions:', err.message);
+  }
+}
+
+async function persistPushSubscription(subscription) {
+  if (!PUSH_PERSISTENCE_ENABLED) return;
+  try {
+    await pushSubscriptionsRepository.add(subscription);
+  } catch (err) {
+    console.error('Failed to persist push subscription:', err.message);
+  }
+}
+
+async function removePersistedPushSubscription(subscription) {
+  if (!PUSH_PERSISTENCE_ENABLED) return;
+  try {
+    await pushSubscriptionsRepository.remove(subscription.endpoint);
+  } catch (err) {
+    console.error('Failed to remove persisted push subscription:', err.message);
+  }
+}
 
 const validatePushSubscription = [
   body('subscription').isObject().withMessage('subscription must be an object'),
@@ -353,7 +394,7 @@ const validatePushSubscription = [
   },
 ];
 
-app.post('/api/notifications/subscribe', validatePushSubscription, (req, res) => {
+app.post('/api/notifications/subscribe', validatePushSubscription, async (req, res) => {
   try {
     const { subscription } = req.body;
     if (subscription) {
@@ -362,6 +403,7 @@ app.post('/api/notifications/subscribe', validatePushSubscription, (req, res) =>
         const oldest = pushSubscriptions.values().next().value;
         pushSubscriptions.delete(oldest);
       }
+      await persistPushSubscription(subscription);
     }
     return res.json({ success: true });
   } catch (err) {
@@ -369,10 +411,13 @@ app.post('/api/notifications/subscribe', validatePushSubscription, (req, res) =>
   }
 });
 
-app.post('/api/notifications/unsubscribe', validatePushSubscription, (req, res) => {
+app.post('/api/notifications/unsubscribe', validatePushSubscription, async (req, res) => {
   try {
     const { subscription } = req.body;
-    if (subscription) pushSubscriptions.delete(JSON.stringify(subscription));
+    if (subscription) {
+      pushSubscriptions.delete(JSON.stringify(subscription));
+      await removePersistedPushSubscription(subscription);
+    }
     return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -673,13 +718,16 @@ let server;
 if (process.env.NODE_ENV !== 'test') {
   if (!process.env.VERCEL) {
     const boot = HAS_SUPABASE ? Promise.resolve() : ensureContentFile();
-    boot.then(() => {
-      server = app.listen(port, () => {
-        console.log(`NexaSphere server listening on http://localhost:${port}`);
+    boot
+      .then(() => loadPersistedPushSubscriptions())
+      .then(() => {
+        server = app.listen(port, () => {
+          console.log(`NexaSphere server listening on http://localhost:${port}`);
+        });
+        initializeSocketIO(server);
       });
-      initializeSocketIO(server);
-    });
   } else {
+    loadPersistedPushSubscriptions();
     server = app.listen(port, () => {
       console.log(`NexaSphere server listening on http://localhost:${port}`);
     });
