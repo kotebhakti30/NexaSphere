@@ -49,10 +49,18 @@ const format = winston.format.combine(
   })
 );
 
+// Determine runtime levels: Console is dynamic, historical files maintain info baseline
+const consoleLevel = process.env.LOG_LEVEL || "info";
+const fileBaselineLevel = "info";
+
+// Ensure the root gatekeeper allows debug logs through if requested, otherwise defaults to info
+const globalGatekeeperLevel = consoleLevel === "debug" ? "debug" : fileBaselineLevel;
+
 // Define transports
 const transports = [
   // Console transport
   new winston.transports.Console({
+    level: consoleLevel, // <-- Add this line
     format: winston.format.combine(
       winston.format.colorize({ all: true }),
       format
@@ -66,9 +74,9 @@ const transports = [
     format: winston.format.uncolorize(),
   }),
 
-  // Combined logs
   new winston.transports.File({
     filename: path.join(logsDir, "combined.log"),
+    level: fileBaselineLevel, // <-- Add this line
     format: winston.format.uncolorize(),
   }),
 
@@ -76,6 +84,7 @@ const transports = [
   new DailyRotateFile({
     filename: path.join(logsDir, "application-%DATE%.log"),
     datePattern: "YYYY-MM-DD",
+    level: fileBaselineLevel, // <-- Add this line
     maxSize: "20m",
     maxFiles: "14d",
     format: winston.format.uncolorize(),
@@ -84,8 +93,9 @@ const transports = [
 ];
 
 // Create logger instance
+// Create logger instance
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || "info",
+  level: globalGatekeeperLevel, // <-- Change this line
   levels,
   format,
   transports,
