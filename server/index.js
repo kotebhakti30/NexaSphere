@@ -9,6 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { adminAuthMiddleware } from './middleware/adminAuthMiddleware.js';
 import analyticsRouter from './routes/analytics.js';
+import apiRouter from './routes/api.js';
 import { initializeSocketIO } from './config/socket.js';
 import adminStreamRouter from './routes/adminStream.js';
 import documentationRouter from './routes/documentation.js';
@@ -29,6 +30,9 @@ import {
   passwordResetRateLimiter,
 } from './middleware/authRateLimiter.js';
 import { portfolioRepository } from './repositories/portfolioRepository.js';
+import { portfolioContentSchema, portfolioPutSchema } from './validators/portfolioSchemas.js';
+import { searchController } from './controllers/searchController.js';
+import { pushSubscriptionsRepository } from './repositories/pushSubscriptionsRepository.js';
 import { getPublicAppUrl } from './utils/publicAppUrl.js';
 import * as eventsController from './controllers/eventsController.js';
 import * as activityEventsController from './controllers/activityEventsController.js';
@@ -37,6 +41,7 @@ import * as formsController from './controllers/formsController.js';
 import { eventsService } from './services/eventsService.js';
 import { coreTeamService } from './services/coreTeamService.js';
 import notificationsService from './services/notificationsService.js';
+import { notificationPreferencesRepository } from './repositories/notificationPreferencesRepository.js';
 import { supabaseRequest, HAS_SUPABASE } from './storage/supabaseClient.js';
 
 validateLimiters();
@@ -71,12 +76,175 @@ const allowedOrigins = process.env.CORS_ORIGIN.split(',')
   .map((s) => s.trim())
   .filter(Boolean);
 
-app.use(helmet());
+```js id="kpxvgr"
+app.use(
+  helmet({
+
+    // Prevent MIME sniffing
+    noSniff: true,
+
+    // Prevent clickjacking
+    frameguard: {
+      action: "deny",
+    },
+
+    // Hide X-Powered-By
+    hidePoweredBy: true,
+
+    // Disable old IE XSS filter
+    xssFilter: false,
+
+    // Restrict referrer leakage
+    referrerPolicy: {
+      policy: "strict-origin-when-cross-origin",
+    },
+
+    // Enforce HTTPS in production
+    hsts: env.NODE_ENV === "production"
+      ? {
+          maxAge: 31536000,
+          includeSubDomains: true,
+          preload: true,
+        }
+      : false,
+
+    // Strict Content Security Policy
+    contentSecurityPolicy: {
+
+      useDefaults: false,
+
+      directives: {
+
+        // Default restriction
+        defaultSrc: ["'self'"],
+
+        // Prevent inline scripts + third-party execution
+        scriptSrc: [
+          "'self'",
+        ],
+
+        // Allow styles from self only
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+        ],
+
+        // Images
+        imgSrc: [
+          "'self'",
+          "data:",
+          "blob:",
+          "https:",
+        ],
+
+        // Fonts
+        fontSrc: [
+          "'self'",
+          "https:",
+          "data:",
+        ],
+
+        // API/WebSocket connections
+        connectSrc: [
+          "'self'",
+          "https:",
+          "wss:",
+        ],
+
+        // Block Flash/object/embed
+        objectSrc: ["'none'"],
+
+        // Prevent <base> hijacking
+        baseUri: ["'self'"],
+
+        // Prevent iframe embedding
+        frameAncestors: ["'none'"],
+
+        // Restrict forms
+        formAction: ["'self'"],
+
+        // Prevent mixed content
+        upgradeInsecureRequests: [],
+
+        // Restrict workers
+        workerSrc: [
+          "'self'",
+          "blob:",
+        ],
+
+        // Restrict manifests
+        manifestSrc: ["'self'"],
+
+        // Restrict media
+        mediaSrc: ["'self'"],
+
+        // Restrict frames
+        frameSrc: ["'none'"],
+
+        // Restrict child browsing contexts
+        childSrc: ["'none'"],
+      },
+    },
+
+    // Safer cross-origin behavior
+    crossOriginEmbedderPolicy: false,
+
+    crossOriginOpenerPolicy: {
+      policy: "same-origin",
+    },
+
+    crossOriginResourcePolicy: {
+      policy: "same-origin",
+    },
+
+    // Disable DNS prefetching
+    dnsPrefetchControl: {
+      allow: false,
+    },
+
+    // Prevent browser feature abuse
+    permissionsPolicy: {
+      features: {
+        geolocation: [],
+        microphone: [],
+        camera: [],
+        payment: [],
+        usb: [],
+        magnetometer: [],
+        gyroscope: [],
+      },
+    },
+  })
+);
+```
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: [
+          "'self'",
+          process.env.FRONTEND_URL || 'http://localhost:5173',
+          `wss://${process.env.DOMAIN || 'localhost'}`,
+        ],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 app.use(tracingMiddleware);
 
-app.use(express.json({ limit: '512kb' }));
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(morgan('combined'));
 app.use(performanceMonitor);
 
@@ -118,6 +286,7 @@ app.get('/api/health', (_req, res) => {
 // Mount monitoring + API documentation routes
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api', documentationRouter);
+app.use('/', apiRouter);
 
 const adminAuth = adminAuthMiddleware.requireAdmin;
 
@@ -194,7 +363,11 @@ app.get('/healthz', async (req, res) => {
 // Event channels/content
 app.get('/api/content/events', eventsController.listEvents);
 app.get('/api/content/activity-events/:activityKey', activityEventsController.listActivityEvents);
-app.post('/api/content/activity-events/:activityKey', protectedActionRateLimiter, activityEventsController.addActivityEvent);
+app.post(
+  '/api/content/activity-events/:activityKey',
+  protectedActionRateLimiter,
+  activityEventsController.addActivityEvent
+);
 app.delete(
   '/api/content/activity-events/:activityKey/:eventId',
   protectedActionRateLimiter,
@@ -287,8 +460,48 @@ app.get('/api/admin/me', adminAuth, (req, res) => {
   return res.json({ username: req.adminSession.username });
 });
 
-// Real-time Push Subscriber channels
+// Real-time Push Subscriber channels.
+// The in-memory Set is a fast local mirror. When a PostgreSQL database is
+// configured (DATABASE_URL present), subscriptions are also persisted to the
+// push_subscriptions table so they survive server restarts, deploys, and
+// crashes. When no database is configured the store degrades to memory-only,
+// preserving the previous behavior for local development.
 const pushSubscriptions = new Set();
+
+const PUSH_PERSISTENCE_ENABLED = Boolean(process.env.DATABASE_URL);
+
+// Load any previously persisted subscriptions into the in-memory mirror at
+// startup so a restart does not silently drop registered subscribers.
+async function loadPersistedPushSubscriptions() {
+  if (!PUSH_PERSISTENCE_ENABLED) return;
+  try {
+    const rows = await pushSubscriptionsRepository.list({ limit: 10000 });
+    for (const sub of rows) {
+      pushSubscriptions.add(JSON.stringify(sub));
+    }
+    console.log(`Loaded ${rows.length} persisted push subscription(s).`);
+  } catch (err) {
+    console.error('Failed to load persisted push subscriptions:', err.message);
+  }
+}
+
+async function persistPushSubscription(subscription) {
+  if (!PUSH_PERSISTENCE_ENABLED) return;
+  try {
+    await pushSubscriptionsRepository.add(subscription);
+  } catch (err) {
+    console.error('Failed to persist push subscription:', err.message);
+  }
+}
+
+async function removePersistedPushSubscription(subscription) {
+  if (!PUSH_PERSISTENCE_ENABLED) return;
+  try {
+    await pushSubscriptionsRepository.remove(subscription.endpoint);
+  } catch (err) {
+    console.error('Failed to remove persisted push subscription:', err.message);
+  }
+}
 
 const validatePushSubscription = [
   body('subscription').isObject().withMessage('subscription must be an object'),
@@ -324,7 +537,7 @@ const validatePushSubscription = [
   },
 ];
 
-app.post('/api/notifications/subscribe', validatePushSubscription, (req, res) => {
+app.post('/api/notifications/subscribe', validatePushSubscription, async (req, res) => {
   try {
     const { subscription } = req.body;
     if (subscription) {
@@ -333,6 +546,7 @@ app.post('/api/notifications/subscribe', validatePushSubscription, (req, res) =>
         const oldest = pushSubscriptions.values().next().value;
         pushSubscriptions.delete(oldest);
       }
+      await persistPushSubscription(subscription);
     }
     return res.json({ success: true });
   } catch (err) {
@@ -340,10 +554,13 @@ app.post('/api/notifications/subscribe', validatePushSubscription, (req, res) =>
   }
 });
 
-app.post('/api/notifications/unsubscribe', validatePushSubscription, (req, res) => {
+app.post('/api/notifications/unsubscribe', validatePushSubscription, async (req, res) => {
   try {
     const { subscription } = req.body;
-    if (subscription) pushSubscriptions.delete(JSON.stringify(subscription));
+    if (subscription) {
+      pushSubscriptions.delete(JSON.stringify(subscription));
+      await removePersistedPushSubscription(subscription);
+    }
     return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -446,19 +663,22 @@ const failedPasskeyAttemptsByUsername = new Map();
 // Periodic sweep every 30 minutes: remove entries whose lockout period has
 // expired and whose attempt count has already been reset to 0, so they do
 // not accumulate for keys that are never visited again.
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of failedPasskeyAttemptsByIp) {
-    if (entry.count === 0 && now > entry.lockoutUntil) {
-      failedPasskeyAttemptsByIp.delete(key);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [key, entry] of failedPasskeyAttemptsByIp) {
+      if (entry.count === 0 && now > entry.lockoutUntil) {
+        failedPasskeyAttemptsByIp.delete(key);
+      }
     }
-  }
-  for (const [key, entry] of failedPasskeyAttemptsByUsername) {
-    if (now > entry.lockoutUntil) {
-      failedPasskeyAttemptsByUsername.delete(key);
+    for (const [key, entry] of failedPasskeyAttemptsByUsername) {
+      if (now > entry.lockoutUntil) {
+        failedPasskeyAttemptsByUsername.delete(key);
+      }
     }
-  }
-}, 30 * 60 * 1000).unref();
+  },
+  30 * 60 * 1000
+).unref();
 
 function checkPasskeyLockout(username, ip) {
   const ipKey = String(ip || 'unknown');
@@ -493,7 +713,10 @@ function recordFailedPasskeyAttempt(username, ip) {
   const userKey = String(username || '').toLowerCase();
 
   // IP tracking
-  if (!failedPasskeyAttemptsByIp.has(ipKey) && failedPasskeyAttemptsByIp.size >= MAX_PASSKEY_TRACKED_KEYS) {
+  if (
+    !failedPasskeyAttemptsByIp.has(ipKey) &&
+    failedPasskeyAttemptsByIp.size >= MAX_PASSKEY_TRACKED_KEYS
+  ) {
     failedPasskeyAttemptsByIp.delete(failedPasskeyAttemptsByIp.keys().next().value);
   }
   const ipEntry = failedPasskeyAttemptsByIp.get(ipKey) || { count: 0, lockoutUntil: 0 };
@@ -505,7 +728,10 @@ function recordFailedPasskeyAttempt(username, ip) {
   failedPasskeyAttemptsByIp.set(ipKey, ipEntry);
 
   // Username tracking (Exponential backoff)
-  if (!failedPasskeyAttemptsByUsername.has(userKey) && failedPasskeyAttemptsByUsername.size >= MAX_PASSKEY_TRACKED_KEYS) {
+  if (
+    !failedPasskeyAttemptsByUsername.has(userKey) &&
+    failedPasskeyAttemptsByUsername.size >= MAX_PASSKEY_TRACKED_KEYS
+  ) {
     failedPasskeyAttemptsByUsername.delete(failedPasskeyAttemptsByUsername.keys().next().value);
   }
   const userEntry = failedPasskeyAttemptsByUsername.get(userKey) || { count: 0, lockoutUntil: 0 };
@@ -532,8 +758,51 @@ function clearPasskeyAttempts(username, ip) {
 app.get('/api/notifications', async (req, res) => {
   try {
     const userId = req.query.userId || 'global';
-    const list = await notificationsService.getNotifications(userId);
+    const offset = parseInt(req.query.offset, 10) || 0;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+    const list = await notificationsService.getNotifications(userId, offset, limit);
     return res.json({ notifications: list });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Notification Preferences
+app.get('/api/notifications/preferences', async (req, res) => {
+  try {
+    const userId = req.query.userId || 'global';
+    const prefs = await notificationPreferencesRepository.list(userId);
+    return res.json({ preferences: prefs });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/notifications/preferences', async (req, res) => {
+  try {
+    const userId = req.body.userId || 'global';
+    const { category, email, push, in_app } = req.body;
+    if (!category) return res.status(400).json({ error: 'category is required' });
+    const pref = await notificationPreferencesRepository.set(userId, category, {
+      email,
+      push,
+      in_app,
+    });
+    return res.json({ preference: pref });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/notifications/preferences/bulk', async (req, res) => {
+  try {
+    const userId = req.body.userId || 'global';
+    const { preferences } = req.body;
+    if (!Array.isArray(preferences) || !preferences.length) {
+      return res.status(400).json({ error: 'preferences array is required' });
+    }
+    const results = await notificationPreferencesRepository.setBulk(userId, preferences);
+    return res.json({ preferences: results });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -542,20 +811,31 @@ app.get('/api/notifications', async (req, res) => {
 app.put('/api/portfolio', protectedActionRateLimiter, async (req, res) => {
   try {
     const body = req.body || {};
-    const username = String(body.username || '').trim();
-    const passkey = String(body.passkey || '').trim();
-    const ip = req.ip || 'unknown';
+    const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
 
-    if (!username || username.length < 3) {
-      return res.status(400).json({ error: 'Username must be at least 3 characters long' });
+    // 1. Validate credentials up front.  Anything below this point
+    //    trusts the username + passkey pair.
+    const credentials = portfolioPutSchema.safeParse({
+      username: body.username,
+      passkey: body.passkey,
+    });
+    if (!credentials.success) {
+      const firstIssue = credentials.error.issues[0];
+      return res.status(400).json({ error: firstIssue?.message || 'Invalid request body' });
     }
-    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+    const { username, passkey } = credentials.data;
+
+    // 2. Validate the content body.  This rejects XSS payloads such
+    //    as javascript: URLs and unknown protocol schemes before
+    //    the data ever reaches the repository.  The repository
+    //    re-sanitizes as defense-in-depth.
+    const content = portfolioContentSchema.safeParse(body);
+    if (!content.success) {
+      const firstIssue = content.error.issues[0];
       return res.status(400).json({
-        error: 'Username can only contain alphanumeric characters, underscores, and hyphens',
+        error:
+          `Invalid portfolio content: ${firstIssue?.path?.join('.') || ''} ${firstIssue?.message || ''}`.trim(),
       });
-    }
-    if (!passkey || passkey.length < 12) {
-      return res.status(400).json({ error: 'Passkey must be at least 12 characters long' });
     }
 
     const existingPortfolio = await portfolioRepository.getByUsername(username);
@@ -578,7 +858,11 @@ app.put('/api/portfolio', protectedActionRateLimiter, async (req, res) => {
 
     clearPasskeyAttempts(username, ip);
 
-    const saved = await portfolioRepository.createOrUpdate(body, isNewRegistration);
+    const saved = await portfolioRepository.createOrUpdate({
+      ...content.data,
+      username,
+      passkey,
+    });
     return res.json({ ok: true, portfolio: saved });
   } catch (err) {
     if (err.code === '23505') {
@@ -590,6 +874,11 @@ app.put('/api/portfolio', protectedActionRateLimiter, async (req, res) => {
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
+
+// ── Search, Discovery & Recommendation Engine ──
+app.get('/api/search', searchController.search);
+app.get('/api/search/trending', searchController.trending);
+app.get('/api/recommendations', searchController.recommendations);
 
 // Must be registered after all routes.
 app.use(notFoundHandler);
@@ -612,19 +901,24 @@ process.on('uncaughtException', (err) => {
 const port = Number(process.env.PORT || 8787);
 let server;
 
-if (!process.env.VERCEL) {
-  const boot = HAS_SUPABASE ? Promise.resolve() : ensureContentFile();
-  boot.then(() => {
+if (process.env.NODE_ENV !== 'test') {
+  if (!process.env.VERCEL) {
+    const boot = HAS_SUPABASE ? Promise.resolve() : ensureContentFile();
+    boot
+      .then(() => loadPersistedPushSubscriptions())
+      .then(() => {
+        server = app.listen(port, () => {
+          console.log(`NexaSphere server listening on http://localhost:${port}`);
+        });
+        initializeSocketIO(server);
+      });
+  } else {
+    loadPersistedPushSubscriptions();
     server = app.listen(port, () => {
       console.log(`NexaSphere server listening on http://localhost:${port}`);
     });
     initializeSocketIO(server);
-  });
-} else {
-  server = app.listen(port, () => {
-    console.log(`NexaSphere server listening on http://localhost:${port}`);
-  });
-  initializeSocketIO(server);
+  }
 }
 
 export default app;
