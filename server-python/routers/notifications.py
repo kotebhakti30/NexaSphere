@@ -22,6 +22,9 @@ class NotificationResponse(BaseModel):
 INTERNAL_SERVICE_SECRET = os.getenv("INTERNAL_SERVICE_SECRET", "")
 
 
+def _verify_service_auth(
+    x_service_auth: Optional[str] = Header(default=None, alias="X-Service-Auth")
+) -> None:
 def _verify_service_auth(x_service_auth: Optional[str] = Header(default=None)) -> None:
     """Dependency that validates the internal service auth header string securely."""
     if not INTERNAL_SERVICE_SECRET:
