@@ -81,16 +81,14 @@ const allowedOrigins = process.env.CORS_ORIGIN.split(',')
   .map((s) => s.trim())
   .filter(Boolean);
 
-```js id="kpxvgr"
 app.use(
   helmet({
-
     // Prevent MIME sniffing
     noSniff: true,
 
     // Prevent clickjacking
     frameguard: {
-      action: "deny",
+      action: 'deny',
     },
 
     // Hide X-Powered-By
@@ -101,60 +99,41 @@ app.use(
 
     // Restrict referrer leakage
     referrerPolicy: {
-      policy: "strict-origin-when-cross-origin",
+      policy: 'strict-origin-when-cross-origin',
     },
 
     // Enforce HTTPS in production
-    hsts: env.NODE_ENV === "production"
-      ? {
-          maxAge: 31536000,
-          includeSubDomains: true,
-          preload: true,
-        }
-      : false,
+    hsts:
+      process.env.NODE_ENV === 'production'
+        ? {
+            maxAge: 31536000,
+            includeSubDomains: true,
+            preload: true,
+          }
+        : false,
 
     // Strict Content Security Policy
     contentSecurityPolicy: {
-
       useDefaults: false,
 
       directives: {
-
         // Default restriction
         defaultSrc: ["'self'"],
 
         // Prevent inline scripts + third-party execution
-        scriptSrc: [
-          "'self'",
-        ],
+        scriptSrc: ["'self'"],
 
         // Allow styles from self only
-        styleSrc: [
-          "'self'",
-          "'unsafe-inline'",
-        ],
+        styleSrc: ["'self'", "'unsafe-inline'"],
 
         // Images
-        imgSrc: [
-          "'self'",
-          "data:",
-          "blob:",
-          "https:",
-        ],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
 
         // Fonts
-        fontSrc: [
-          "'self'",
-          "https:",
-          "data:",
-        ],
+        fontSrc: ["'self'", 'https:', 'data:'],
 
         // API/WebSocket connections
-        connectSrc: [
-          "'self'",
-          "https:",
-          "wss:",
-        ],
+        connectSrc: ["'self'", 'https:', 'wss:'],
 
         // Block Flash/object/embed
         objectSrc: ["'none'"],
@@ -172,10 +151,7 @@ app.use(
         upgradeInsecureRequests: [],
 
         // Restrict workers
-        workerSrc: [
-          "'self'",
-          "blob:",
-        ],
+        workerSrc: ["'self'", 'blob:'],
 
         // Restrict manifests
         manifestSrc: ["'self'"],
@@ -195,11 +171,11 @@ app.use(
     crossOriginEmbedderPolicy: false,
 
     crossOriginOpenerPolicy: {
-      policy: "same-origin",
+      policy: 'same-origin',
     },
 
     crossOriginResourcePolicy: {
-      policy: "same-origin",
+      policy: 'same-origin',
     },
 
     // Disable DNS prefetching
@@ -219,29 +195,6 @@ app.use(
         gyroscope: [],
       },
     },
-  })
-);
-```
-
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: [
-          "'self'",
-          process.env.FRONTEND_URL || 'http://localhost:5173',
-          `wss://${process.env.DOMAIN || 'localhost'}`,
-        ],
-        objectSrc: ["'none'"],
-        upgradeInsecureRequests: [],
-      },
-    },
-    crossOriginEmbedderPolicy: false,
   })
 );
 app.use(cors({ origin: allowedOrigins, credentials: true }));
@@ -922,6 +875,7 @@ if (process.env.NODE_ENV !== 'test') {
       server = app.listen(port, () => {
         console.log(`NexaSphere server listening on http://localhost:${port}`);
       });
+    });
   } else {
     loadPersistedPushSubscriptions();
     server = app.listen(port, () => {

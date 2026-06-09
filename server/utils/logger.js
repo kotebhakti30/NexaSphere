@@ -111,34 +111,12 @@ const transports = [
   }),
 ];
 
-if (isStorageWritable) {
-  activeTransports.push(
-    new winston.transports.File({
-      filename: path.join(logsDir, 'error.log'),
-      level: 'error',
-      format: winston.format.uncolorize(),
-    }),
-    new winston.transports.File({
-      filename: path.join(logsDir, 'combined.log'),
-      format: winston.format.uncolorize(),
-    }),
-    new DailyRotateFile({
-      filename: path.join(logsDir, 'application-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '20m',
-      maxFiles: '14d',
-      format: winston.format.uncolorize(),
-      utc: true,
-    })
-  );
-}
-// Create logger instance
 // Create logger instance
 const logger = winston.createLogger({
   level: globalGatekeeperLevel, // <-- Change this line
   levels,
   format: baseFileFormat,
-  transports: activeTransports,
+  transports,
   exceptionHandlers: isStorageWritable
     ? [
         new DailyRotateFile({
