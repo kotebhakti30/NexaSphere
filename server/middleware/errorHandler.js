@@ -37,6 +37,16 @@ const errorHandler = (err, req, res, next) => {
 
   logger.error('Global Error Handler', errorLog);
 
+  // Transaction Recovery Audit Log
+  logger.warn('Transaction Recovery Triggered', {
+    endpoint: req.originalUrl,
+    method: req.method,
+    recoveryAction: 'ROLLBACK_REQUIRED',
+    statusCode: status,
+    userId: resolveUserId(req),
+    timestamp: new Date().toISOString(),
+  });
+
   // Capture to Sentry
   captureException(err, {
     userId: resolveUserId(req),
@@ -69,6 +79,7 @@ const errorHandler = (err, req, res, next) => {
   // Send response
   res.status(status).json({
     success: false,
+    recoveryRequired: status >= 500,
     error: {
       status,
       message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : message,

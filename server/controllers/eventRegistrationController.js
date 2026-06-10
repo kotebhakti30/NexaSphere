@@ -121,7 +121,7 @@ export const registerForEvent = wrapAsync(async (req, res) => {
         waitlist: true,
       });
       try {
-        emitToRole('events_admin', 'admin:waitlist-promotion', {
+        emitToRole('events_admin', 'admin:waitlist-added', {
           eventId,
           userName: sanitizedFullName,
           timestamp: new Date(),

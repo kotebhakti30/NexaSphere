@@ -103,7 +103,11 @@ const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
 const AnalyticsPage = lazy(() => import('./pages/analytics/AnalyticsPage'));
 const WorkspacePage = lazy(() => import('./pages/workspace/WorkspacePage'));
 const GamificationDashboard = lazy(() => import('./components/gamification/GamificationDashboard'));
+const ForumPage = lazy(() => import('./pages/forum/ForumPage'));
+const ForumThreadPage = lazy(() => import('./pages/forum/ForumThreadPage'));
 const LoginPage = lazy(() => import('./pages/login/LoginPage'));
+const MentorsPage = lazy(() => import('./pages/mentorship/MentorsPage'));
+const MentorshipDashboard = lazy(() => import('./pages/mentorship/MentorshipDashboard'));
 
 const MNH = 88,
   DNH = 64;
@@ -603,6 +607,10 @@ function MainRouter({
       '/apply': 'Apply',
       '/join': 'Join',
       '/explore': 'Explore',
+      '/forum': 'Forum',
+      '/mentorship': 'Mentorship',
+      '/mentorship/mentors': 'Mentorship',
+      '/mentorship/dashboard': 'Mentorship',
     };
     const tab = pathMap[location.pathname] || 'Home';
     setActiveTab(tab);
@@ -671,6 +679,8 @@ function MainRouter({
         About: '/about',
         'Core Team': '/team',
         Contact: '/contact',
+        Forum: '/forum',
+        Mentorship: '/mentorship',
       };
       const targetPath = routeMap[tab];
       if (targetPath) {
@@ -952,6 +962,50 @@ function MainRouter({
 
             {/* ── Workspace (collaborative room) ── */}
             <Route path="/workspace/:roomId" element={<WorkspaceWrapper onBack={onBackHome} />} />
+
+            {/* ── Forum ── */}
+            <Route
+              path="/forum"
+              element={
+                <PageIn k="forum">
+                  <ForumPage onBack={onBackHome} />
+                </PageIn>
+              }
+            />
+            <Route
+              path="/forum/:id"
+              element={
+                <PageIn k="forum-thread">
+                  <ForumThreadPage onBack={() => nav('/forum')} />
+                </PageIn>
+              }
+            />
+
+            {/* ── Mentorship ── */}
+            <Route
+              path="/mentorship"
+              element={
+                <PageIn k="mentorship">
+                  <MentorsPage />
+                </PageIn>
+              }
+            />
+            <Route
+              path="/mentorship/mentors"
+              element={
+                <PageIn k="mentorship-mentors">
+                  <MentorsPage />
+                </PageIn>
+              }
+            />
+            <Route
+              path="/mentorship/dashboard"
+              element={
+                <PageIn k="mentorship-dashboard">
+                  <MentorshipDashboard />
+                </PageIn>
+              }
+            />
 
             {/* ── Admin (embedded, for quick access) ── */}
             <Route

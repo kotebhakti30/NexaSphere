@@ -52,7 +52,9 @@ import cookieParser from 'cookie-parser';
 import passport from './config/studentOAuth.js';
 import { studentUsersRepository } from './repositories/studentUsersRepository.js';
 import * as studentAuthController from './controllers/studentAuthController.js';
+import * as forumController from './controllers/forumController.js';
 import { requireStudentAuth } from './middleware/studentAuthMiddleware.js';
+import * as mentorshipController from './controllers/mentorshipController.js';
 import { xssSanitizer } from './middleware/xssSanitizer.js';
 import { tierRateLimiter } from './middleware/tierRateLimiter.js';
 import compression from 'compression';
@@ -425,6 +427,40 @@ app.put('/api/notifications/preferences/bulk', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
+
+// ── Forum / Q&A ──
+app.get('/api/forum/categories', forumController.listCategories);
+app.get('/api/forum/threads', forumController.listThreads);
+app.get('/api/forum/threads/:id', forumController.getThread);
+app.post('/api/forum/threads', forumController.createThread);
+app.put('/api/forum/threads/:id', forumController.updateThread);
+app.delete('/api/forum/threads/:id', forumController.deleteThread);
+app.get('/api/forum/threads/:id/replies', forumController.listReplies);
+app.post('/api/forum/threads/:id/replies', forumController.createReply);
+app.put('/api/forum/replies/:replyId', forumController.updateReply);
+app.delete('/api/forum/replies/:replyId', forumController.deleteReply);
+app.post('/api/forum/threads/:id/vote', forumController.voteThread);
+app.post('/api/forum/replies/:replyId/vote', forumController.voteReply);
+app.post('/api/forum/threads/:id/accept/:replyId', forumController.acceptReply);
+app.patch('/api/admin/forum/threads/:id/moderate', adminAuth, forumController.moderateThread);
+app.patch('/api/admin/forum/replies/:replyId/moderate', adminAuth, forumController.moderateReply);
+app.get('/api/admin/forum/threads', adminAuth, forumController.adminListThreads);
+
+// ── Mentorship & Buddy System ──
+app.get('/api/mentorship/mentors', mentorshipController.listMentors);
+app.get('/api/mentorship/mentors/:id', mentorshipController.getMentor);
+app.post('/api/mentorship/mentors', mentorshipController.registerMentor);
+app.put('/api/mentorship/mentors/:id', mentorshipController.updateMentor);
+app.post('/api/mentorship/requests', mentorshipController.requestMentorship);
+app.get('/api/mentorship/requests', mentorshipController.listMentorships);
+app.get('/api/mentorship/requests/:id', mentorshipController.getMentorship);
+app.put('/api/mentorship/requests/:id/status', mentorshipController.updateMentorshipStatus);
+app.post('/api/mentorship/requests/:id/sessions', mentorshipController.logSession);
+app.get('/api/mentorship/requests/:id/sessions', mentorshipController.listSessions);
+app.post('/api/mentorship/buddy-pairs', mentorshipController.createBuddyPair);
+app.get('/api/mentorship/buddy-pairs', mentorshipController.listBuddyPairs);
+app.get('/api/admin/mentorships', adminAuth, mentorshipController.adminListAll);
+app.get('/api/admin/mentors', adminAuth, mentorshipController.adminListMentors);
 
 // ── Search, Discovery & Recommendation Engine ──
 app.get('/api/search', searchController.search);
