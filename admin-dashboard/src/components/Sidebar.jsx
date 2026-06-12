@@ -92,6 +92,16 @@ const links = [
     icon: 'FileText',
     requiredScope: 'events:read',
   },
+  {
+    to: '/dashboard/mentorship',
+    label: 'Mentorship',
+    icon: 'Users',
+  },
+  {
+    to: '/dashboard/streams',
+    label: 'Live Streams',
+    icon: 'Camera',
+  },
 ];
 
 export function Sidebar() {

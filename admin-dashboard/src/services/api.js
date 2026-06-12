@@ -507,6 +507,34 @@ async function fetchWithAuth(url, options = {}) {
 }
 
 export const api = {
+  mentorship: {
+    getAll: async (params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      if (auth.isOfflineMode()) {
+        return { mentorships: [], total: 0 };
+      }
+      return fetchWithAuth(`/api/admin/mentorships${query ? `?${query}` : ''}`);
+    },
+    getMentors: async (params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      if (auth.isOfflineMode()) {
+        return { mentors: [], total: 0 };
+      }
+      return fetchWithAuth(`/api/admin/mentors${query ? `?${query}` : ''}`);
+    },
+    updateStatus: async (id, status) => {
+      if (auth.isOfflineMode()) {
+        eventEmitter.emit(EVENTS.NOTIFY, { type: 'warning', message: 'Offline mode' });
+        return;
+      }
+      const result = await fetchWithAuth(`/api/mentorship/requests/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+      });
+      eventEmitter.emit(EVENTS.NOTIFY, { type: 'success', message: `Mentorship ${status}` });
+      return result;
+    },
+  },
   eventRegistrations: {
     list: (eventId) => fetchWithAuth(`/api/admin/events/${eventId}/registrations`),
     markAttendance: (eventId, payload) =>

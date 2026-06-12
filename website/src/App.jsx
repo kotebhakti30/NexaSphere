@@ -106,6 +106,9 @@ const GamificationDashboard = lazy(() => import('./components/gamification/Gamif
 const ForumPage = lazy(() => import('./pages/forum/ForumPage'));
 const ForumThreadPage = lazy(() => import('./pages/forum/ForumThreadPage'));
 const LoginPage = lazy(() => import('./pages/login/LoginPage'));
+const MentorsPage = lazy(() => import('./pages/mentorship/MentorsPage'));
+const MentorshipDashboard = lazy(() => import('./pages/mentorship/MentorshipDashboard'));
+const LiveStreamPage = lazy(() => import('./pages/streaming/LiveStreamPage'));
 
 const MNH = 88,
   DNH = 64;
@@ -365,7 +368,9 @@ function Cursor() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppShell />
+      <StudentAuthProvider>
+        <AppShell />
+      </StudentAuthProvider>
     </BrowserRouter>
   );
 }
@@ -606,6 +611,9 @@ function MainRouter({
       '/join': 'Join',
       '/explore': 'Explore',
       '/forum': 'Forum',
+      '/mentorship': 'Mentorship',
+      '/mentorship/mentors': 'Mentorship',
+      '/mentorship/dashboard': 'Mentorship',
     };
     const tab = pathMap[location.pathname] || 'Home';
     setActiveTab(tab);
@@ -675,6 +683,7 @@ function MainRouter({
         'Core Team': '/team',
         Contact: '/contact',
         Forum: '/forum',
+        Mentorship: '/mentorship',
       };
       const targetPath = routeMap[tab];
       if (targetPath) {
@@ -821,6 +830,24 @@ function MainRouter({
             <Route
               path="/events/:eventId"
               element={<EventDetailWrapper onBack={() => nav('/events')} events={eventsData} />}
+            />
+
+            {/* ── Live Streaming ── */}
+            <Route
+              path="/stream/:eventId"
+              element={
+                <PageIn k="stream">
+                  <LiveStreamPage />
+                </PageIn>
+              }
+            />
+            <Route
+              path="/stream/:eventId/:streamId"
+              element={
+                <PageIn k="stream-id">
+                  <LiveStreamPage />
+                </PageIn>
+              }
             />
 
             {/* ── Dashboard (requires auth) ── */}
@@ -971,6 +998,32 @@ function MainRouter({
               element={
                 <PageIn k="forum-thread">
                   <ForumThreadPage onBack={() => nav('/forum')} />
+                </PageIn>
+              }
+            />
+
+            {/* ── Mentorship ── */}
+            <Route
+              path="/mentorship"
+              element={
+                <PageIn k="mentorship">
+                  <MentorsPage />
+                </PageIn>
+              }
+            />
+            <Route
+              path="/mentorship/mentors"
+              element={
+                <PageIn k="mentorship-mentors">
+                  <MentorsPage />
+                </PageIn>
+              }
+            />
+            <Route
+              path="/mentorship/dashboard"
+              element={
+                <PageIn k="mentorship-dashboard">
+                  <MentorshipDashboard />
                 </PageIn>
               }
             />
