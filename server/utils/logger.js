@@ -81,8 +81,23 @@ const textFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.errors({ stack: true }),
   winston.format.splat(),
-  correlationFormat(),
-  logLayout
+  winston.format.printf((info) => {
+    const { timestamp, level, message, ...args } = info;
+    const ts = typeof timestamp === 'string' ? timestamp : new Date().toISOString();
+
+    // Strip out internal Winston symbol keys so they don't print as empty objects
+    const cleanArgs = Object.keys(args).reduce((acc, key) => {
+      if (typeof key === "string" || typeof key === "number") {
+        acc[key] = args[key];
+      }
+      return acc;
+    }, {});
+
+    // REMOVED 'null, 2' to keep metadata on a single unified line
+    return `${ts} [${level}]: ${message} ${
+      Object.keys(args).length ? JSON.stringify(args) : ""
+    }`;
+  })
 );
 
 const baseFileFormat = LOG_FORMAT === 'json' ? jsonFormat : textFormat;
