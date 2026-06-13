@@ -17,7 +17,7 @@ const SectionSchema = z
   .min(1, 'Section is required')
   .max(20);
 
-const OptionalText = (max) => z.string().trim().max(max).optional().transform((value) => (value ? value.trim() : undefined));
+const OptionalText = (max) => z.string().trim().max(max).optional().transform((value) => value || undefined);
 
 const TextList = z
   .union([z.array(z.string()), z.string()])
@@ -47,10 +47,10 @@ const CommonIdentitySchema = z.object({
   email: EmailSchema.optional(),
   reason: z.string().trim().min(1).max(1200).optional(),
   whyJoin: z.string().trim().min(1).max(1200).optional(),
-}).strip();
+});
 
 const RecruitmentExtrasSchema = z.object({
-  year: z.string().trim().max(40).optional(),
+  year: z.string().trim().min(1, 'Year is required').max(40),
   role: OptionalText(80),
   interests: TextList,
   skills: OptionalText(400),
@@ -67,7 +67,7 @@ const RecruitmentExtrasSchema = z.object({
   rollNumber: OptionalText(40),
   course: OptionalText(80),
   groups: TextList,
-}).strip();
+});
 
 const MembershipExtrasSchema = z.object({
   rollNumber: OptionalText(40),
@@ -75,7 +75,7 @@ const MembershipExtrasSchema = z.object({
   semester: z.string().trim().min(1, 'Semester is required').max(40),
   groups: TextList,
   whyJoin: z.string().trim().max(1200).optional(),
-}).strip();
+});
 
 function pickString(primary, fallback) {
   const value = String(primary ?? fallback ?? '').trim();
@@ -100,8 +100,8 @@ function normalizeBase(data) {
 
 const recruitmentSubmissionSchema = CommonIdentitySchema.merge(RecruitmentExtrasSchema)
   .superRefine((data, ctx) => {
-    if (!String(data.year || '').trim()) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['year'], message: 'Year is required' });
+    if (!data.collegeEmail && !data.email) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['collegeEmail'], message: 'Email address is required' });
     }
     if (!data.reason && !data.whyJoin) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['reason'], message: 'Reason is required' });
@@ -136,6 +136,9 @@ const coreTeamApplicationSchema = recruitmentSubmissionSchema;
 
 const membershipSubmissionSchema = CommonIdentitySchema.merge(MembershipExtrasSchema)
   .superRefine((data, ctx) => {
+    if (!data.collegeEmail && !data.email) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['collegeEmail'], message: 'Email address is required' });
+    }
     if (!data.reason && !data.whyJoin) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['whyJoin'], message: 'Reason is required' });
     }
