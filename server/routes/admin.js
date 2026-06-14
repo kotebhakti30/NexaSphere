@@ -5,6 +5,11 @@
 
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
+import {
+  validateConfigChange,
+  createChangeHistory,
+  rollbackConfig,
+} from '../utils/configApproval.js';
 
 const router = Router();
 const adminAuth = adminAuthMiddleware.requireAdmin;
@@ -46,6 +51,25 @@ router.get('/api/admin/membership', adminAuth, async (req, res) => {
  */
 router.get('/api/admin/me', adminAuth, (req, res) => {
   return res.json({ username: req.adminSession.username });
+});
+
+/**
+ * POST /api/admin/config-review
+ * Validate critical configuration changes
+ */
+router.post('/api/admin/config-review', adminAuth, (req, res) => {
+  const validation = validateConfigChange(req.body);
+
+  const history = createChangeHistory(req.body);
+
+  const rollback = rollbackConfig(req.body);
+
+  return res.json({
+    success: true,
+    validation,
+    history,
+    rollback,
+  });
 });
 
 export default router;
