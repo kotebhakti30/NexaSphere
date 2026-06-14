@@ -5,6 +5,7 @@ import UserGrowthChart from '../../components/admin/analytics/UserGrowthChart';
 import EventAttendanceChart from '../../components/admin/analytics/EventAttendanceChart';
 import '../../components/admin/analytics/analytics.css';
 import socketClient from '../../utils/socketClient';
+import { getApiBase } from '../../utils/runtimeConfig';
 
 export default function AdminPage({ onBack }) {
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export default function AdminPage({ onBack }) {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const base = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
+      const base = getApiBase();
       const authToken = token || localStorage.getItem('ns_admin_token');
       const headers = { Authorization: `Bearer ${authToken}` };
 
@@ -51,7 +52,7 @@ export default function AdminPage({ onBack }) {
   useEffect(() => {
     if (!isLoggedIn) return;
 
-    const base = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
+    const base = getApiBase();
     const url = `${base}/api/admin/metrics/stream`;
 
     const listeners = {};
@@ -181,7 +182,7 @@ export default function AdminPage({ onBack }) {
     e.preventDefault();
     try {
       setLoading(true);
-      const base = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
+      const base = getApiBase();
       const result = await apiClient(`${base}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -205,7 +206,7 @@ export default function AdminPage({ onBack }) {
 
   const handleLogout = async () => {
     try {
-      const base = (import.meta?.env?.VITE_API_BASE || '').replace(/\/+$/, '');
+      const base = getApiBase();
       await fetch(`${base}/api/admin/logout`, {
         method: 'POST',
         credentials: 'include',
