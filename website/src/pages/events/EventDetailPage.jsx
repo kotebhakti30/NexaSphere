@@ -476,7 +476,7 @@ export default function EventDetailPage({ event, activityColor, activityIcon, on
   const [regSubmitting, setRegSubmitting] = useState(false);
   useEffect(() => {
     window.scrollTo({ top: 0 });
-    setTimeout(() => setMounted(true), 60);
+    const mountTimer = setTimeout(() => setMounted(true), 60);
 
     // Local scroll-reveal observer — sub-pages mount after the global observer ran
     const obs = new IntersectionObserver(
@@ -495,7 +495,10 @@ export default function EventDetailPage({ event, activityColor, activityIcon, on
         '#event-detail-page .pop-in, #event-detail-page .pop-left, #event-detail-page .pop-right, #event-detail-page .pop-scale'
       )
       .forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
+    return () => {
+      clearTimeout(mountTimer);
+      obs.disconnect();
+    };
   }, []);
 
   const isUpcoming = event.status === 'upcoming';
