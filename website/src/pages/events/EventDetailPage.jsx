@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { DynamicIcon } from '../../shared/Icons';
-import { API_BASE } from '../../data/config';
+import { getApiBase } from '../../utils/runtimeConfig';
 import apiClient from '../../utils/apiClient';
 
 function hexToRgb(hex) {
@@ -513,7 +513,7 @@ export default function EventDetailPage({ event, activityColor, activityIcon, on
     setRegError('');
     setRegSubmitting(true);
     try {
-      const base = API_BASE || '';
+      const base = getApiBase();
       const url = `${base}/api/content/events/${event.id}/register`;
       const data = await apiClient(url, {
         method: 'POST',
@@ -536,7 +536,7 @@ export default function EventDetailPage({ event, activityColor, activityIcon, on
   };
 
   const handleCalendarDownload = () => {
-    const base = API_BASE || '';
+    const base = getApiBase();
     const url = `${base}/api/content/events/${event.id}/calendar`;
     window.open(url, '_blank');
   };
