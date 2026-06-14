@@ -335,6 +335,32 @@ router.get('/failover-status', requireMonitoringAuth, (req, res) => {
 });
 
 /**
+ * GET /api/monitoring/traces
+ * Get recent request traces for dependency visualization and bottleneck identification
+ */
+router.get('/traces', requireMonitoringAuth, async (req, res) => {
+  try {
+    const { activeTraces } = await import('../middleware/tracingMiddleware.js');
+    const tracesArray = Array.from(activeTraces.values()).reverse();
+    const limit = Math.min(parseInt(req.query.limit) || 100, 500);
+    const paginatedTraces = tracesArray.slice(0, limit);
+
+    res.status(200).json({
+      success: true,
+      data: paginatedTraces,
+      count: paginatedTraces.length,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    logger.error('Error fetching traces', { error: error.message });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch traces'
+    });
+  }
+});
+
+/**
  * GET /api/monitoring/threat-status
  * Get suspicious activity monitoring statistics
  */
