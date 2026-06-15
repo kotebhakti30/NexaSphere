@@ -6,9 +6,6 @@ import helmet from 'helmet';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import { body, validationResult } from 'express-validator';
-import { EventEmitter } from 'events';
-import { google } from 'googleapis';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16,7 +13,7 @@ import crypto from 'crypto';
 import { adminAuthMiddleware } from './middleware/adminAuthMiddleware.js';
 import analyticsRouter from './routes/analytics.js';
 import apiRouter from './routes/api.js';
-import { initializeSocketIO, emitToRoom, getRoom } from './config/socket.js';
+import { initializeSocketIO } from './config/socket.js';
 import adminStreamRouter from './routes/adminStream.js';
 import documentationRouter from './routes/documentation.js';
 import monitoringRouter from './routes/monitoring.js';
@@ -31,23 +28,9 @@ import { performanceMonitor } from './middleware/performanceMonitor.js';
 import { tracingMiddleware } from './middleware/tracingMiddleware.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { initializeSentry, addSentryErrorHandler } from './utils/sentry.js';
-import {
-  apiRateLimiter,
-  formRateLimiter,
-  notificationRateLimiter,
-  activityAuthRateLimiter,
-  portfolioRateLimiter,
-  validateLimiters,
-} from './middleware/rateLimiter.js';
-import {
-  authRateLimiter,
-  protectedActionRateLimiter,
-  passwordResetRateLimiter,
-} from './middleware/authRateLimiter.js';
-import { portfolioRepository } from './repositories/portfolioRepository.js';
-import { portfolioContentSchema, portfolioPutSchema } from './validators/portfolioSchemas.js';
+import { apiRateLimiter, validateLimiters } from './middleware/rateLimiter.js';
+
 import { searchController } from './controllers/searchController.js';
-import { pushSubscriptionsRepository } from './repositories/pushSubscriptionsRepository.js';
 import { Mutex } from 'async-mutex';
 import { CircuitBreaker, circuitBreakerRegistry } from './utils/circuitBreaker.js';
 import { getPublicAppUrl } from './utils/publicAppUrl.js';
@@ -55,11 +38,7 @@ import * as eventsController from './controllers/eventsController.js';
 import * as activityEventsController from './controllers/activityEventsController.js';
 import * as streamController from './controllers/streamController.js';
 import * as coreTeamController from './controllers/coreTeamController.js';
-import * as formsController from './controllers/formsController.js';
-import { eventsService } from './services/eventsService.js';
 import { coreTeamService } from './services/coreTeamService.js';
-import notificationsService from './services/notificationsService.js';
-import { notificationPreferencesRepository } from './repositories/notificationPreferencesRepository.js';
 import { HAS_SUPABASE } from './storage/supabaseClient.js';
 import cookieParser from 'cookie-parser';
 import passport from './config/studentOAuth.js';
@@ -67,7 +46,7 @@ import { studentUsersRepository } from './repositories/studentUsersRepository.js
 import * as studentAuthController from './controllers/studentAuthController.js';
 import * as forumController from './controllers/forumController.js';
 import { requireStudentAuth } from './middleware/studentAuthMiddleware.js';
-import { studentAuthService } from './services/studentAuthService.js';
+import { loadPersistedPushSubscriptions } from './routes/notifications.js';
 import * as mentorshipController from './controllers/mentorshipController.js';
 import { xssSanitizer } from './middleware/xssSanitizer.js';
 import { tierRateLimiter } from './middleware/tierRateLimiter.js';
@@ -79,8 +58,6 @@ validateLimiters();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CONTENT_FILE = path.join(__dirname, 'data', 'content.json');
-
-
 
 validateEnvironment();
 
@@ -1054,67 +1031,6 @@ app.delete(
   coreTeamController.adminDeleteCoreTeamMember
 );
 
-// Dynamic forms
-app.post('/api/forms/membership', formRateLimiter, formsController.makeHandleForm('membership'));
-app.post('/api/forms/recruitment', formRateLimiter, formsController.makeHandleForm('recruitment'));
-app.post('/api/core-team/apply', formRateLimiter, formsController.makeHandleForm('core_team'));
-
-app.post(
-  '/api/submissions/membership',
-  formRateLimiter,
-  formsController.makeHandleForm('membership')
-);
-app.post(
-  '/api/submissions/recruitment',
-  formRateLimiter,
-  formsController.makeHandleForm('recruitment')
-);
-
-// Admin membership responses
-async function _rawMembershipFetch(scriptUrl, secret) {
-  const response = await fetch(scriptUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'getResponses', token: secret }),
-  });
-  if (!response.ok) {
-    throw new Error(`Google Apps Script returned ${response.status}`);
-  }
-  return response.json();
-}
-
-const membershipBreaker = circuitBreakerRegistry.register(
-  'membership-gas',
-  new CircuitBreaker(_rawMembershipFetch, {
-    name: 'membership-gas',
-    failureThreshold: 3,
-    successThreshold: 2,
-    coolDownPeriod: 15000,
-    maxCoolDownPeriod: 120000,
-  })
-);
-
-app.get('/api/admin/membership', adminAuth, async (req, res) => {
-  try {
-    const scriptUrl = process.env.MEMBERSHIP_SCRIPT_URL;
-    const secret = process.env.MEMBERSHIP_SECRET;
-
-    if (!scriptUrl || !secret) {
-      return res.json({ responses: [] });
-    }
-
-    const data = await membershipBreaker.execute(scriptUrl, secret);
-    return res.json({ responses: data.responses || [] });
-  } catch (err) {
-    if (err.code === 'CIRCUIT_OPEN') {
-      console.warn('[Membership] Circuit breaker is OPEN, returning empty responses');
-      return res.json({ responses: [] });
-    }
-    console.error('[Membership] Failed to fetch responses:', err.message);
-    return res.status(500).json({ error: 'Failed to fetch membership responses' });
-  }
-});
-
 // Circuit Breaker Admin API
 app.get('/api/admin/circuit-breaker/metrics', adminAuth, async (req, res) => {
   const metrics = circuitBreakerRegistry.getAllMetrics();
@@ -1141,473 +1057,6 @@ app.post('/api/admin/circuit-breaker/retry/:name', adminAuth, async (req, res) =
     return res.json({ ok: true, state: breaker.state, result });
   } catch (err) {
     return res.json({ ok: false, error: err.message });
-  }
-});
-
-app.get('/api/admin/me', adminAuth, (req, res) => {
-  return res.json({ username: req.adminSession.username });
-});
-
-// Real-time Push Subscriber channels.
-// The in-memory Set is a fast local mirror. When a PostgreSQL database is
-// configured (DATABASE_URL present), subscriptions are also persisted to the
-// push_subscriptions table so they survive server restarts, deploys, and
-// crashes. When no database is configured the store degrades to memory-only,
-// preserving the previous behavior for local development.
-const pushSubscriptions = new Set();
-
-const PUSH_PERSISTENCE_ENABLED = Boolean(process.env.DATABASE_URL);
-
-// Load any previously persisted subscriptions into the in-memory mirror at
-// startup so a restart does not silently drop registered subscribers.
-async function loadPersistedPushSubscriptions() {
-  if (!PUSH_PERSISTENCE_ENABLED) return;
-  try {
-    const rows = await pushSubscriptionsRepository.list({ limit: 10000 });
-    for (const sub of rows) {
-      pushSubscriptions.add(JSON.stringify(sub));
-    }
-    console.log(`Loaded ${rows.length} persisted push subscription(s).`);
-  } catch (err) {
-    console.error('Failed to load persisted push subscriptions:', err.message);
-  }
-}
-
-async function persistPushSubscription(subscription) {
-  if (!PUSH_PERSISTENCE_ENABLED) return;
-  try {
-    await pushSubscriptionsRepository.add(subscription);
-  } catch (err) {
-    console.error('Failed to persist push subscription:', err.message);
-  }
-}
-
-async function removePersistedPushSubscription(subscription) {
-  if (!PUSH_PERSISTENCE_ENABLED) return;
-  try {
-    await pushSubscriptionsRepository.remove(subscription.endpoint);
-  } catch (err) {
-    console.error('Failed to remove persisted push subscription:', err.message);
-  }
-}
-
-const validatePushSubscription = [
-  body('subscription').isObject().withMessage('subscription must be an object'),
-  body('subscription.endpoint')
-    .isURL()
-    .withMessage('endpoint must be a valid URL')
-    .isLength({ max: 2048 }),
-  body('subscription.keys').isObject().withMessage('keys must be an object'),
-  body('subscription.keys.p256dh')
-    .isString()
-    .isLength({ max: 256 })
-    .withMessage('p256dh must be a string up to 256 chars'),
-  body('subscription.keys.auth')
-    .isString()
-    .isLength({ max: 128 })
-    .withMessage('auth must be a string up to 128 chars'),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res
-        .status(400)
-        .json({ error: 'Invalid subscription payload', details: errors.array() });
-    }
-
-    // Strict sanitization: reconstruct object to drop malicious properties and limit memory size
-    const {
-      endpoint,
-      keys: { p256dh, auth },
-    } = req.body.subscription;
-    req.body.subscription = { endpoint, keys: { p256dh, auth } };
-
-    next();
-  },
-];
-
-app.post(
-  '/api/notifications/subscribe',
-  adminAuth,
-  notificationRateLimiter,
-  validatePushSubscription,
-  async (req, res) => {
-    try {
-      const { subscription } = req.body;
-      if (subscription) {
-        pushSubscriptions.add(JSON.stringify(subscription));
-        if (pushSubscriptions.size > 10000) {
-          const oldest = pushSubscriptions.values().next().value;
-          pushSubscriptions.delete(oldest);
-        }
-        await persistPushSubscription(subscription);
-      }
-      return res.json({ success: true });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  }
-);
-
-app.post(
-  '/api/notifications/unsubscribe',
-  adminAuth,
-  notificationRateLimiter,
-  validatePushSubscription,
-  async (req, res) => {
-    try {
-      const { subscription } = req.body;
-      if (subscription) {
-        pushSubscriptions.delete(JSON.stringify(subscription));
-        await removePersistedPushSubscription(subscription);
-      }
-      return res.json({ success: true });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  }
-);
-
-function requireNotificationAuth(req, res, next) {
-  adminAuthMiddleware.requireAdmin(req, res, (err) => {
-    if (!err && req.adminSession) {
-      return next();
-    }
-    requireStudentAuth(req, res, (err2) => {
-      if (!err2 && req.studentUser) {
-        return next();
-      }
-      return res.status(401).json({ error: 'Unauthorized: Authentication required' });
-    });
-  });
-}
-
-app.post(
-  '/api/notifications/mark-read',
-  requireNotificationAuth,
-  notificationRateLimiter,
-  async (req, res) => {
-    try {
-      const { id, userId } = req.body || {};
-      if (!id) return res.status(400).json({ error: 'id required' });
-      let uid = userId || 'global';
-      if (req.studentUser) {
-        const studentId = req.studentUser.sub || req.studentUser.id;
-        if (userId && userId !== studentId) {
-          return res
-            .status(403)
-            .json({ error: 'Forbidden: Cannot modify other users notifications' });
-        }
-        uid = studentId;
-      }
-      const ok = await notificationsService.markAsRead(uid, id);
-      return res.json({ success: ok });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  }
-);
-
-app.post(
-  '/api/notifications/mark-all-read',
-  requireNotificationAuth,
-  notificationRateLimiter,
-  async (req, res) => {
-    try {
-      const { userId } = req.body || {};
-      let uid = userId || 'global';
-      if (req.studentUser) {
-        const studentId = req.studentUser.sub || req.studentUser.id;
-        if (userId && userId !== studentId) {
-          return res.status(403).json({ error: 'Forbidden' });
-        }
-        uid = studentId;
-      }
-      await notificationsService.markAllAsRead(uid);
-      return res.json({ success: true });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  }
-);
-
-app.delete(
-  '/api/notifications/:id',
-  requireNotificationAuth,
-  notificationRateLimiter,
-  async (req, res) => {
-    try {
-      const id = req.params.id;
-      let uid = req.query.userId || 'global';
-      if (req.studentUser) {
-        const studentId = req.studentUser.sub || req.studentUser.id;
-        if (req.query.userId && req.query.userId !== studentId) {
-          return res.status(403).json({ error: 'Forbidden' });
-        }
-        uid = studentId;
-      }
-      const removed = await notificationsService.removeNotification(uid, id);
-      if (!removed) return res.status(404).json({ error: 'Notification not found' });
-      return res.json({ success: true });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  }
-);
-
-app.delete(
-  '/api/notifications',
-  requireNotificationAuth,
-  notificationRateLimiter,
-  async (req, res) => {
-    try {
-      let uid = req.query.userId || 'global';
-      if (req.studentUser) {
-        const studentId = req.studentUser.sub || req.studentUser.id;
-        if (req.query.userId && req.query.userId !== studentId) {
-          return res.status(403).json({ error: 'Forbidden' });
-        }
-        uid = studentId;
-      }
-      await notificationsService.clearAll(uid);
-      return res.json({ success: true });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  }
-);
-
-app.post('/api/notifications', adminAuth, notificationRateLimiter, async (req, res) => {
-  try {
-    const { userId, title, message, type, link } = req.body || {};
-    if (!title || !message) {
-      return res.status(400).json({ error: 'title and message are required' });
-    }
-    const note = await notificationsService.addNotification(userId || 'global', {
-      title,
-      message,
-      type,
-      link,
-    });
-    return res.json({ success: true, notification: note });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// Portfolio routing support
-app.get('/api/portfolio/:username', async (req, res) => {
-  try {
-    const username = String(req.params.username || '').trim();
-    if (!username) {
-      return res.status(400).json({ error: 'Username is required' });
-    }
-    const portfolio = await portfolioRepository.getByUsername(username);
-    if (!portfolio) {
-      return res.status(404).json({ error: 'Portfolio not found' });
-    }
-    return res.json(portfolio);
-  } catch (err) {
-    console.error('Error fetching portfolio:', err);
-    return res.status(500).json({ error: err.message || 'Internal server error' });
-  }
-});
-
-// Hard cap on tracked entries. When the limit is reached, the
-// oldest inserted entry is evicted before adding a new one, preventing the
-// Map from growing without bound when an attacker rotates through many
-// distinct usernames from the same or different IP addresses.
-const MAX_PASSKEY_TRACKED_KEYS = 10_000;
-const failedPasskeyAttemptsByIp = new Map();
-const failedPasskeyAttemptsByUsername = new Map();
-
-// Periodic sweep every 30 minutes: remove entries whose lockout period has
-// expired and whose attempt count has already been reset to 0, so they do
-// not accumulate for keys that are never visited again.
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, entry] of failedPasskeyAttemptsByIp) {
-      if (entry.count === 0 && now > entry.lockoutUntil) {
-        failedPasskeyAttemptsByIp.delete(key);
-      }
-    }
-    for (const [key, entry] of failedPasskeyAttemptsByUsername) {
-      if (now > entry.lockoutUntil) {
-        failedPasskeyAttemptsByUsername.delete(key);
-      }
-    }
-  },
-  30 * 60 * 1000
-).unref();
-
-function checkPasskeyLockout(username, ip) {
-  const ipKey = String(ip || 'unknown');
-  const userKey = String(username || '').toLowerCase();
-
-  const ipEntry = failedPasskeyAttemptsByIp.get(ipKey);
-  const userEntry = failedPasskeyAttemptsByUsername.get(userKey);
-
-  const now = Date.now();
-
-  if (ipEntry && ipEntry.lockoutUntil !== 0 && now <= ipEntry.lockoutUntil) {
-    return true;
-  }
-
-  if (userEntry && userEntry.lockoutUntil !== 0 && now <= userEntry.lockoutUntil) {
-    return true;
-  }
-
-  // Cleanup expired entries proactively
-  if (ipEntry && ipEntry.lockoutUntil !== 0 && now > ipEntry.lockoutUntil) {
-    failedPasskeyAttemptsByIp.delete(ipKey);
-  }
-  if (userEntry && userEntry.lockoutUntil !== 0 && now > userEntry.lockoutUntil) {
-    failedPasskeyAttemptsByUsername.delete(userKey);
-  }
-
-  return false;
-}
-
-function recordFailedPasskeyAttempt(username, ip) {
-  const ipKey = String(ip || 'unknown');
-  const userKey = String(username || '').toLowerCase();
-
-  // IP tracking
-  if (
-    !failedPasskeyAttemptsByIp.has(ipKey) &&
-    failedPasskeyAttemptsByIp.size >= MAX_PASSKEY_TRACKED_KEYS
-  ) {
-    failedPasskeyAttemptsByIp.delete(failedPasskeyAttemptsByIp.keys().next().value);
-  }
-  const ipEntry = failedPasskeyAttemptsByIp.get(ipKey) || { count: 0, lockoutUntil: 0 };
-  ipEntry.count += 1;
-  if (ipEntry.count >= 5) {
-    ipEntry.lockoutUntil = Date.now() + 15 * 60 * 1000; // 15 mins
-    ipEntry.count = 0; // Reset count so they need 5 more AFTER lockout to be locked again
-  }
-  failedPasskeyAttemptsByIp.set(ipKey, ipEntry);
-
-  // Username tracking (Exponential backoff)
-  if (
-    !failedPasskeyAttemptsByUsername.has(userKey) &&
-    failedPasskeyAttemptsByUsername.size >= MAX_PASSKEY_TRACKED_KEYS
-  ) {
-    failedPasskeyAttemptsByUsername.delete(failedPasskeyAttemptsByUsername.keys().next().value);
-  }
-  const userEntry = failedPasskeyAttemptsByUsername.get(userKey) || { count: 0, lockoutUntil: 0 };
-  userEntry.count += 1;
-  if (userEntry.count >= 5) {
-    // 5 attempts = 1 min, 6 = 2 mins, 7 = 4 mins, 8 = 8 mins, 9+ = 15 mins
-    const factor = Math.pow(2, Math.max(0, userEntry.count - 5));
-    const delayMinutes = Math.min(15, factor);
-    userEntry.lockoutUntil = Date.now() + delayMinutes * 60 * 1000;
-  }
-  failedPasskeyAttemptsByUsername.set(userKey, userEntry);
-
-  return { ipEntry, userEntry };
-}
-
-function clearPasskeyAttempts(username, ip) {
-  const ipKey = String(ip || 'unknown');
-  const userKey = String(username || '').toLowerCase();
-
-  failedPasskeyAttemptsByIp.delete(ipKey);
-  failedPasskeyAttemptsByUsername.delete(userKey);
-}
-
-app.get('/api/notifications', async (req, res) => {
-  try {
-    const userId = req.query.userId || 'global';
-
-    if (userId !== 'global') {
-      let authenticated = false;
-
-      // 1. Try Student Auth
-      let token = null;
-      const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.slice(7).trim();
-      }
-      if (!token && req.cookies?.ns_student_token) {
-        token = req.cookies.ns_student_token;
-      }
-      if (token) {
-        const payload = studentAuthService.verifyToken(token);
-        if (payload && (payload.sub === userId || payload.id === userId)) {
-          authenticated = true;
-        }
-      }
-
-      // 2. Try Admin Auth
-      if (!authenticated) {
-        let adminToken = null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          adminToken = authHeader.slice(7).trim();
-        }
-        if (!adminToken && req.cookies?.ns_admin_token) {
-          adminToken = req.cookies.ns_admin_token;
-        }
-        if (adminToken) {
-          const { getAdminSession } = await import('./repositories/adminSessionsRepository.js');
-          const session = await getAdminSession(adminToken);
-          if (session) {
-            authenticated = true;
-          }
-        }
-      }
-
-      if (!authenticated) {
-        return res.status(401).json({ error: 'Unauthorized to view these notifications' });
-      }
-    }
-
-    const offset = parseInt(req.query.offset, 10) || 0;
-    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
-    const list = await notificationsService.getNotifications(userId, offset, limit);
-    return res.json({ notifications: list });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// Notification Preferences
-app.get('/api/notifications/preferences', async (req, res) => {
-  try {
-    const userId = req.query.userId || 'global';
-    const prefs = await notificationPreferencesRepository.list(userId);
-    return res.json({ preferences: prefs });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/api/notifications/preferences', async (req, res) => {
-  try {
-    const userId = req.body.userId || 'global';
-    const { category, email, push, in_app } = req.body;
-    if (!category) return res.status(400).json({ error: 'category is required' });
-    const pref = await notificationPreferencesRepository.set(userId, category, {
-      email,
-      push,
-      in_app,
-    });
-    return res.json({ preference: pref });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/api/notifications/preferences/bulk', async (req, res) => {
-  try {
-    const userId = req.body.userId || 'global';
-    const { preferences } = req.body;
-    if (!Array.isArray(preferences) || !preferences.length) {
-      return res.status(400).json({ error: 'preferences array is required' });
-    }
-    const results = await notificationPreferencesRepository.setBulk(userId, preferences);
-    return res.json({ preferences: results });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
   }
 });
 
