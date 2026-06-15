@@ -14,6 +14,7 @@ import { authRateLimiter, protectedActionRateLimiter } from '../middleware/authR
 import { portfolioRepository } from '../repositories/portfolioRepository.js';
 import { achievementsRepository } from '../repositories/achievementsRepository.js';
 import { portfolioService } from '../services/portfolioService.js';
+import { sponsorshipMarketplaceService } from '../services/sponsorshipMarketplaceService.js';
 
 const router = Router();
 
@@ -41,9 +42,24 @@ router.delete(
 
 // Admin auth
 router.get('/api/admin/users', adminAuthMiddleware.requireAdmin, usersController.getAdminUsers);
-router.post('/api/admin/users', adminAuthMiddleware.requireAdmin, adminAuditMiddleware, usersController.adminCreateUser);
-router.put('/api/admin/users/:id', adminAuthMiddleware.requireAdmin, adminAuditMiddleware, usersController.adminUpdateUser);
-router.delete('/api/admin/users/:id', adminAuthMiddleware.requireAdmin, adminAuditMiddleware, usersController.adminDeactivateUser);
+router.post(
+  '/api/admin/users',
+  adminAuthMiddleware.requireAdmin,
+  adminAuditMiddleware,
+  usersController.adminCreateUser
+);
+router.put(
+  '/api/admin/users/:id',
+  adminAuthMiddleware.requireAdmin,
+  adminAuditMiddleware,
+  usersController.adminUpdateUser
+);
+router.delete(
+  '/api/admin/users/:id',
+  adminAuthMiddleware.requireAdmin,
+  adminAuditMiddleware,
+  usersController.adminDeactivateUser
+);
 router.post('/api/admin/login', authRateLimiter, adminAuthMiddleware.login);
 router.post('/api/admin/logout', adminAuthMiddleware.requireAdmin, adminAuthMiddleware.logout);
 
@@ -188,6 +204,46 @@ router.delete(
       return res.status(500).json({ error: err.message });
     }
   }
+);
+
+// Sponsorship Marketplace
+router.get('/api/content/sponsorship/companies', (req, res) =>
+  res.json({ companies: sponsorshipMarketplaceService.listCompanies(req.query) })
+);
+router.post('/api/content/sponsorship/companies', (req, res) =>
+  res.status(201).json(sponsorshipMarketplaceService.createCompany(req.body))
+);
+router.get('/api/content/sponsorship/companies/:id', (req, res) =>
+  res.json(sponsorshipMarketplaceService.getCompany(req.params.id))
+);
+router.get('/api/content/sponsorship/packages', (req, res) =>
+  res.json({ packages: sponsorshipMarketplaceService.getPackages() })
+);
+router.get('/api/content/sponsorship/proposals', (req, res) =>
+  res.json({ proposals: sponsorshipMarketplaceService.getProposals(req.query) })
+);
+router.post('/api/content/sponsorship/proposals', (req, res) =>
+  res.status(201).json(sponsorshipMarketplaceService.createProposal(req.body))
+);
+router.put('/api/content/sponsorship/proposals/:id/status', (req, res) => {
+  const result = sponsorshipMarketplaceService.updateProposalStatus(req.params.id, req.body.status);
+  if (!result) return res.status(404).json({ error: 'Proposal not found' });
+  res.json(result);
+});
+router.get('/api/content/sponsorship/agreements', (req, res) =>
+  res.json({ agreements: sponsorshipMarketplaceService.getAgreements(req.query) })
+);
+router.put('/api/content/sponsorship/agreements/:id/deliverables', (req, res) => {
+  const result = sponsorshipMarketplaceService.updateDeliverable(
+    req.params.id,
+    req.body.item,
+    req.body.done
+  );
+  if (!result) return res.status(404).json({ error: 'Agreement not found' });
+  res.json(result);
+});
+router.get('/api/content/sponsorship/roi/:companyId', (req, res) =>
+  res.json(sponsorshipMarketplaceService.getROI(req.params.companyId))
 );
 
 export default router;

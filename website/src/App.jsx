@@ -110,6 +110,9 @@ const MentorsPage = lazy(() => import('./pages/mentorship/MentorsPage'));
 const MentorshipDashboard = lazy(() => import('./pages/mentorship/MentorshipDashboard'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const LiveStreamPage = lazy(() => import('./pages/streaming/LiveStreamPage'));
+const SponsorshipMarketplacePage = lazy(
+  () => import('./pages/monetization/SponsorshipMarketplacePage')
+);
 
 const MNH = 88,
   DNH = 64;
@@ -615,6 +618,7 @@ function MainRouter({
       '/mentorship': 'Mentorship',
       '/mentorship/mentors': 'Mentorship',
       '/mentorship/dashboard': 'Mentorship',
+      '/sponsorship': 'Sponsorship',
     };
     const tab = pathMap[location.pathname] || 'Home';
     setActiveTab(tab);
@@ -1055,6 +1059,16 @@ function MainRouter({
               element={
                 <PageIn k="status">
                   <StatusPage />
+                </PageIn>
+              }
+            />
+
+            {/* ── Sponsorship Marketplace ── */}
+            <Route
+              path="/sponsorship"
+              element={
+                <PageIn k="sponsorship">
+                  <SponsorshipMarketplacePage />
                 </PageIn>
               }
             />
