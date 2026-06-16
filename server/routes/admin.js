@@ -29,6 +29,13 @@ import {
   getReadOnlyStatus,
   createIncidentLog,
 } from '../utils/readOnlyMode.js';
+import {
+  getServiceStatus,
+  getIncidentTimeline,
+  getMaintenanceSchedule,
+  getHistoricalUptime,
+  getSubscriberNotifications,
+} from '../utils/serviceStatus.js';
 
 const router = Router();
 const adminAuth = [apiRateLimiter, adminAuthMiddleware.requireAdmin];
@@ -137,6 +144,26 @@ router.post('/api/admin/read-only-disable', adminAuth, (req, res) => {
 
 router.get('/api/admin/read-only-log', adminAuth, (req, res) => {
   res.json(createIncidentLog());
+});
+
+router.get('/api/admin/service-status', adminAuth, (req, res) => {
+  res.json(getServiceStatus());
+});
+
+router.get('/api/admin/incidents', adminAuth, (req, res) => {
+  res.json(getIncidentTimeline());
+});
+
+router.get('/api/admin/maintenance', adminAuth, (req, res) => {
+  res.json(getMaintenanceSchedule());
+});
+
+router.get('/api/admin/uptime-report', adminAuth, (req, res) => {
+  res.json(getHistoricalUptime());
+});
+
+router.get('/api/admin/status-subscribers', adminAuth, (req, res) => {
+  res.json(getSubscriberNotifications());
 });
 
 export default router;
