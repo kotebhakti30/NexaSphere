@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../utils/apiClient';
+import { getApiBase } from '../../utils/runtimeConfig';
 import { fallbackCategories, fallbackThreads } from '../../data/forumData.js';
 import Footer from '../../shared/Footer';
 
@@ -25,7 +26,7 @@ export default function ForumPage({ onBack }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const base = import.meta.env.VITE_API_BASE || '';
+    const base = getApiBase();
     if (!base) {
       setThreads(fallbackThreads);
       setLoading(false);
@@ -67,7 +68,7 @@ export default function ForumPage({ onBack }) {
     e.preventDefault();
     setError('');
     setSubmitting(true);
-    const base = import.meta.env.VITE_API_BASE || '';
+    const base = getApiBase();
     if (!base) {
       setError('Forum is in offline mode. Please try again later.');
       setSubmitting(false);
