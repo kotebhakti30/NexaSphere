@@ -27,6 +27,7 @@ export default function ExplorePage({ onBack, eventsData }) {
   const [recommendations, setRecommendations] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [filters, setFilters] = useState(null);
   const [activeTab, setActiveTab] = useState('discover');
 
@@ -44,7 +45,12 @@ export default function ExplorePage({ onBack, eventsData }) {
         if (trendingRes?.trending) setTrending(trendingRes.trending);
         if (recsRes?.recommendations) setRecommendations(recsRes.recommendations);
         if (teamRes?.members) setMembers(teamRes.members);
-      } catch {}
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.warn('[ExplorePage] Failed to fetch explore data:', err.message);
+        }
+        setFetchError('Failed to load content. Please try again.');
+      }
       setLoading(false);
     };
     fetchData();
