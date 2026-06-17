@@ -34,6 +34,7 @@
     "prepare": "node -e \"try { require('husky'); require('child_process').execSync('husky', {stdio:'inherit'}) } catch(e) { console.log('husky not available, skipping') }\""
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "concurrently": "^10.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.6",
@@ -46,26 +47,22 @@
     ]
   },
   "optionalDependencies": {
+    "@rolldown/binding-linux-arm64-gnu": "1.0.3",
+    "@rolldown/binding-linux-x64-gnu": "1.0.3",
+    "@rolldown/binding-linux-x64-musl": "1.0.3",
     "@rollup/rollup-linux-arm64-gnu": "4.61.1",
     "@rollup/rollup-linux-arm64-musl": "4.60.0",
     "@rollup/rollup-linux-x64-gnu": "4.60.0",
     "@rollup/rollup-linux-x64-musl": "4.60.0",
-    "@rolldown/binding-linux-arm64-gnu": "1.0.3",
-    "@rolldown/binding-linux-x64-gnu": "1.0.3",
-    "@rolldown/binding-linux-x64-musl": "1.0.3",
     "lightningcss-linux-arm64-gnu": "1.32.0",
     "lightningcss-linux-x64-gnu": "1.32.0",
     "lightningcss-linux-x64-musl": "1.32.0"
   },
   "dependencies": {
+    "@prisma/client": "^5.12.1",
     "jwt-decode": "^4.0.0",
-    "@rollup/rollup-linux-arm64-gnu": "4.61.1",
-    "@rollup/rollup-linux-arm64-musl": "4.60.0",
-    "@rollup/rollup-linux-x64-gnu": "4.61.1",
-    "@rollup/rollup-linux-x64-musl": "4.60.0",
     "lru-cache": "^11.5.1",
     "next-intl": "^4.13.0",
-    "@prisma/client": "^5.12.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-is": "^19.0.0"
