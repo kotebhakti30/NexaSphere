@@ -50,8 +50,10 @@ export function useDynamicEvents(fallbackEvents) {
           setEventsData(data.events);
         }
       })
-      .catch(() => {
-        // Silent fail
+      .catch((err) => {
+        if (import.meta.env.DEV) {
+          console.warn('[useDataHooks] Failed to fetch events:', err.message);
+        }
       });
 
     return () => {
