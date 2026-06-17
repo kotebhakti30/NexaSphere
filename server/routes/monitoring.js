@@ -20,6 +20,7 @@ import { recordPageLoad } from '../observability/metrics.js';
 import { getServiceHealth, getFailoverStatus } from '../utils/failoverManager.js';
 import securityPatchManager from "../utils/securityPatchManager.js";
 import encryptionManager from "../utils/encryptionManager.js";
+import { databaseFailoverManager } from "../utils/databaseFailoverManager.js";
 
 function requireMonitoringAuth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -562,6 +563,13 @@ router.get("/encryption-audit", (req, res) => {
   return res.json({
     success: true,
     data: logs,
+  });
+});
+
+router.get("/database/status", (req, res) => {
+  res.json({
+    success: true,
+    data: databaseFailoverManager.getFailoverReport(),
   });
 });
 
