@@ -107,6 +107,14 @@ export const apiClient = async (url, options = {}) => {
         body = fetchOptions.body;
       }
 
+      // Security: Redact sensitive fields from body to avoid cleartext storage in IndexedDB
+      if (body && typeof body === 'object') {
+        body = { ...body };
+        ['password', 'token', 'secret', 'authorization', 'apiKey'].forEach((key) => {
+          if (key in body) body[key] = '[REDACTED]';
+        });
+      }
+
       const { queued, id, reason } = await enqueueRequest({
         url,
         method,
