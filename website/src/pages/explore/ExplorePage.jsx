@@ -518,9 +518,9 @@ function EventCard({ event, detailed }) {
             <Calendar size={11} /> {date}
           </span>
         )}
-        {tags.slice(0, 3).map((t, i) => (
+        {tags.slice(0, 3).map((t) => (
           <span
-            key={i}
+            key={t}
             style={{
               fontSize: '0.68rem',
               padding: '2px 8px',
