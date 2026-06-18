@@ -5,6 +5,7 @@ import { getActiveTraceId } from './observability/tracing.js';
 import helmet from 'helmet';
 import express from 'express';
 import cors from 'cors';
+import csrf from 'csurf';
 import morgan from 'morgan';
 import fs, { promises as fsp } from 'fs';
 import { body, validationResult } from 'express-validator';
@@ -133,10 +134,23 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
+      sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24, // 24 hours
     },
   })
 );
+
+// CSRF Protection middleware - protects against Cross-Site Request Forgery
+app.use(csrf());
+
+// Expose CSRF token to the client via a non-httpOnly cookie
+app.use((req, res, next) => {
+  res.cookie('XSRF-TOKEN', req.csrfToken(), {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+  next();
+});
 
 if (!process.env.CORS_ORIGIN) {
   throw new Error('CORS_ORIGIN environment variable must be set.');
