@@ -1061,6 +1061,9 @@ app.post('/api/streams/polls/:pollId/vote', streamController.votePoll);
 app.patch('/api/streams/polls/:pollId/close', adminAuth, streamController.closePoll);
 app.patch('/api/streams/chat/:messageId/moderate', adminAuth, streamController.moderateChatMessage);
 app.get('/api/admin/streams', adminAuth, streamController.adminListAll);
+app.post('/api/streams/:id/mod-chat', adminAuth, streamController.addModChatMessage);
+app.get('/api/streams/:id/mod-chat', adminAuth, streamController.listModChatMessages);
+app.get('/api/streams/:id/analytics', adminAuth, streamController.getStreamAnalytics);
 
 // Streaming Engagement: Q&A and Reactions
 app.post('/api/streams/:id/questions', streamController.addQuestion);

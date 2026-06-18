@@ -91,6 +91,23 @@ export const banUser = async (req, res) => {
   res.json({ success: true, message: `User ${user_email} banned` });
 };
 
+export const addModChatMessage = async (req, res) => {
+  const chat = await streamRepository.addModChatMessage(req.params.id, req.body);
+  emitToRoom(`stream:${req.params.id}:mods`, 'mod_chat_message', chat);
+  res.status(201).json(chat);
+};
+
+export const listModChatMessages = async (req, res) => {
+  const data = await streamRepository.listModChatMessages(req.params.id);
+  res.json(data);
+};
+
+export const getStreamAnalytics = async (req, res) => {
+  const analytics = await streamRepository.getStreamAnalytics(req.params.id);
+  if (!analytics) return res.status(404).json({ error: 'Analytics not found' });
+  res.json(analytics);
+};
+
 export const createPoll = async (req, res) => {
   const poll = await streamRepository.createPoll(req.params.id, req.body);
   emitToRoom(`stream:${req.params.id}`, 'new_poll', poll);

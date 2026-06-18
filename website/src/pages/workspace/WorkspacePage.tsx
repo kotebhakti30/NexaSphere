@@ -38,7 +38,7 @@ function getOrCreateAnonUser() {
 export default function WorkspacePage({ roomId, onBack }: WorkspacePageProps) {
   // Stable anonymous identity — persisted for the session so hot reloads
   // and re-mounts do not generate a new user name and color each time.
-  const [user] = useState(getOrCreateAnonUser);
+  const [user, setUser] = useState(getOrCreateAnonUser);
 
   const { emitDocumentChange, emitCursorMove, emitTyping } = useSocketSync(roomId, user);
   const { documentContent, users, status } = useWorkspaceStore();
@@ -46,9 +46,11 @@ export default function WorkspacePage({ roomId, onBack }: WorkspacePageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Generate initials safely
-    user.initials = user.name.substring(0, 2).toUpperCase();
-  }, [user]);
+    const initials = user.name.substring(0, 2).toUpperCase();
+    if (user.initials !== initials) {
+      setUser((prev) => ({ ...prev, initials }));
+    }
+  }, [user.name, user.initials]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;

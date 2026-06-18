@@ -248,6 +248,52 @@ export const streamRepository = {
     });
   },
 
+  async addModChatMessage(streamId, input) {
+    if (!process.env.DATABASE_URL) return null;
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        `insert into stream_mod_chat_messages (stream_id, user_name, user_email, message) values ($1, $2, $3, $4) returning *`,
+        [streamId, input.user_name, input.user_email || '', input.message]
+      );
+      return rows.length ? mapChatRow(rows[0]) : null;
+    });
+  },
+
+  async listModChatMessages(streamId) {
+    if (!process.env.DATABASE_URL) return [];
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        'select * from stream_mod_chat_messages where stream_id = $1 order by created_at asc',
+        [streamId]
+      );
+      return rows.map(mapChatRow);
+    });
+  },
+
+  async getStreamAnalytics(id) {
+    if (!process.env.DATABASE_URL) return null;
+    return withDb(async (client) => {
+      const statsSql = `
+        select 
+          s.viewer_count, 
+          s.max_viewers,
+          (select count(*) from stream_chat_messages where stream_id = s.id) as chat_count,
+          (select count(*) from stream_reactions where stream_id = s.id) as reaction_count,
+          (select count(*) from stream_questions where stream_id = s.id) as question_count,
+          (select sum(count) from stream_reactions where stream_id = s.id) as total_reactions
+        from streams s
+        where s.id = $1`;
+      const { rows } = await client.query(statsSql, [id]);
+      if (!rows.length) return null;
+      return {
+        ...rows[0],
+        chat_count: parseInt(rows[0].chat_count, 10),
+        reaction_count: parseInt(rows[0].reaction_count, 10),
+        question_count: parseInt(rows[0].question_count, 10),
+      };
+    });
+  },
+
   async addQuestion(streamId, input) {
     if (!process.env.DATABASE_URL) return null;
     return withDb(async (client) => {
