@@ -9,57 +9,12 @@ const pageStyle = {
   fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
 };
 
-const headerStyle = {
-  marginBottom: '32px',
-  borderBottom: '1px solid rgba(255,255,255,0.1)',
-  paddingBottom: '24px',
-};
-
-const titleStyle = {
-  fontSize: '28px',
-  fontWeight: '700',
-  margin: '0 0 8px 0',
-  color: 'var(--text, #f8fafc)',
-};
-
-const subtitleStyle = {
-  fontSize: '14px',
-  color: 'var(--text-secondary, #94a3b8)',
-  margin: 0,
-};
-
-const tabsStyle = {
-  display: 'flex',
-  gap: '8px',
-  marginBottom: '24px',
-  borderBottom: '1px solid rgba(255,255,255,0.1)',
-  paddingBottom: '12px',
-};
-
-const tabStyle = (isActive) => ({
-  padding: '10px 20px',
-  borderRadius: '8px',
-  border: 'none',
-  cursor: 'pointer',
-  fontSize: '14px',
-  fontWeight: isActive ? '600' : '400',
-  background: isActive ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
-  color: isActive ? '#3b82f6' : 'var(--text-secondary, #94a3b8)',
-  transition: 'all 0.2s ease',
-});
-
 const cardStyle = {
   background: 'rgba(255,255,255,0.02)',
   border: '1px solid rgba(255,255,255,0.1)',
   borderRadius: '12px',
   padding: '24px',
   marginBottom: '16px',
-};
-
-const statCardStyle = {
-  ...cardStyle,
-  padding: '20px',
-  textAlign: 'center',
 };
 
 const buttonStyle = (variant = 'primary') => ({
@@ -97,16 +52,20 @@ const inputStyle = {
 const selectStyle = {
   ...inputStyle,
   appearance: 'none',
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right 12px center',
+};
+
+const labelStyle = {
+  display: 'block',
+  fontSize: '13px',
+  fontWeight: '500',
+  color: 'var(--text-secondary, #94a3b8)',
+  marginBottom: '6px',
 };
 
 const statusBadgeStyle = (status) => {
   const colors = {
     draft: { bg: 'rgba(148, 163, 184, 0.2)', text: '#94a3b8' },
     submitted: { bg: 'rgba(59, 130, 246, 0.2)', text: '#3b82f6' },
-    reviewed: { bg: 'rgba(234, 179, 8, 0.2)', text: '#eab308' },
     approved: { bg: 'rgba(34, 197, 94, 0.2)', text: '#22c55e' },
     reimbursed: { bg: 'rgba(139, 92, 246, 0.2)', text: '#8b5cf6' },
     rejected: { bg: 'rgba(239, 68, 68, 0.2)', text: '#ef4444' },
@@ -166,30 +125,6 @@ const modalStyle = {
   border: '1px solid rgba(255,255,255,0.1)',
 };
 
-const labelStyle = {
-  display: 'block',
-  fontSize: '13px',
-  fontWeight: '500',
-  color: 'var(--text-secondary, #94a3b8)',
-  marginBottom: '6px',
-};
-
-const varianceBarStyle = (percentage, isOver) => ({
-  height: '8px',
-  borderRadius: '4px',
-  background: 'rgba(255,255,255,0.1)',
-  overflow: 'hidden',
-  marginTop: '8px',
-});
-
-const varianceFillStyle = (percentage, isOver) => ({
-  height: '100%',
-  width: `${Math.min(percentage, 100)}%`,
-  background: isOver ? '#ef4444' : '#22c55e',
-  borderRadius: '4px',
-  transition: 'width 0.3s ease',
-});
-
 const BUDGET_CATEGORIES = [
   'Venue',
   'Food & Drinks',
@@ -199,9 +134,6 @@ const BUDGET_CATEGORIES = [
   'Prizes',
   'Misc',
 ];
-
-const EXPENSE_STATUSES = ['draft', 'submitted', 'reviewed', 'approved', 'reimbursed', 'rejected'];
-
 const REVENUE_SOURCES = ['Ticket Sales', 'Sponsorship', 'Donations', 'Merchandise', 'Other'];
 
 export default function EventBudgetPage() {
@@ -489,9 +421,17 @@ export default function EventBudgetPage() {
 
   return (
     <div style={pageStyle}>
-      <div style={headerStyle}>
-        <h1 style={titleStyle}>Event Budget Management</h1>
-        <p style={subtitleStyle}>
+      <div
+        style={{
+          marginBottom: '32px',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          paddingBottom: '24px',
+        }}
+      >
+        <h1 style={{ fontSize: '28px', fontWeight: '700', margin: '0 0 8px 0' }}>
+          Event Budget Management
+        </h1>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary, #94a3b8)', margin: 0 }}>
           Track budgets, expenses, revenue, and generate financial reports
         </p>
       </div>
@@ -503,43 +443,49 @@ export default function EventBudgetPage() {
             border: '1px solid rgba(239, 68, 68, 0.3)',
             background: 'rgba(239, 68, 68, 0.1)',
             marginBottom: '16px',
+            display: 'flex',
+            justifyContent: 'space-between',
           }}
         >
           <span style={{ color: '#ef4444' }}>{error}</span>
           <button
             onClick={() => setError(null)}
-            style={{ ...buttonStyle('ghost'), marginLeft: '12px' }}
+            style={{ ...buttonStyle('ghost'), padding: '6px 12px' }}
           >
             Dismiss
           </button>
         </div>
       )}
 
-      <div style={tabsStyle}>
-        <button style={tabStyle(activeTab === 'budgets')} onClick={() => setActiveTab('budgets')}>
-          Budgets
-        </button>
-        <button
-          style={tabStyle(activeTab === 'expenses')}
-          onClick={() => setActiveTab('expenses')}
-          disabled={!selectedBudget}
-        >
-          Expenses
-        </button>
-        <button
-          style={tabStyle(activeTab === 'revenue')}
-          onClick={() => setActiveTab('revenue')}
-          disabled={!selectedBudget}
-        >
-          Revenue
-        </button>
-        <button
-          style={tabStyle(activeTab === 'reports')}
-          onClick={() => setActiveTab('reports')}
-          disabled={!selectedBudget}
-        >
-          Reports
-        </button>
+      <div
+        style={{
+          display: 'flex',
+          gap: '8px',
+          marginBottom: '24px',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          paddingBottom: '12px',
+        }}
+      >
+        {['budgets', 'expenses', 'revenue', 'reports'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            disabled={tab !== 'budgets' && !selectedBudget}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: tab !== 'budgets' && !selectedBudget ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              fontWeight: activeTab === tab ? '600' : '400',
+              background: activeTab === tab ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+              color: activeTab === tab ? '#3b82f6' : 'var(--text-secondary, #94a3b8)',
+              opacity: tab !== 'budgets' && !selectedBudget ? 0.5 : 1,
+            }}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
       </div>
 
       {loading && (
@@ -669,8 +615,23 @@ export default function EventBudgetPage() {
                       </span>
                     </div>
 
-                    <div style={varianceBarStyle()}>
-                      <div style={varianceFillStyle(percentage, percentage > 100)} />
+                    <div
+                      style={{
+                        height: '8px',
+                        borderRadius: '4px',
+                        background: 'rgba(255,255,255,0.1)',
+                        overflow: 'hidden',
+                        marginTop: '8px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${Math.min(percentage, 100)}%`,
+                          background: percentage > 100 ? '#ef4444' : '#22c55e',
+                          borderRadius: '4px',
+                        }}
+                      />
                     </div>
                   </div>
                 );
@@ -827,7 +788,7 @@ export default function EventBudgetPage() {
                 color: 'var(--text-secondary, #94a3b8)',
               }}
             >
-              No revenue entries yet. Add your first revenue entry.
+              No revenue entries yet.
             </div>
           ) : (
             <table style={tableStyle}>
@@ -887,7 +848,6 @@ export default function EventBudgetPage() {
             </div>
           </div>
 
-          {/* Summary Cards */}
           <div
             style={{
               display: 'grid',
@@ -896,7 +856,7 @@ export default function EventBudgetPage() {
               marginBottom: '24px',
             }}
           >
-            <div style={statCardStyle}>
+            <div style={{ ...cardStyle, textAlign: 'center' }}>
               <div
                 style={{
                   fontSize: '13px',
@@ -910,7 +870,7 @@ export default function EventBudgetPage() {
                 {formatCurrency(selectedBudget.totalAmount)}
               </div>
             </div>
-            <div style={statCardStyle}>
+            <div style={{ ...cardStyle, textAlign: 'center' }}>
               <div
                 style={{
                   fontSize: '13px',
@@ -924,7 +884,7 @@ export default function EventBudgetPage() {
                 {formatCurrency(totalSpent)}
               </div>
             </div>
-            <div style={statCardStyle}>
+            <div style={{ ...cardStyle, textAlign: 'center' }}>
               <div
                 style={{
                   fontSize: '13px',
@@ -938,7 +898,7 @@ export default function EventBudgetPage() {
                 {formatCurrency(totalRevenue)}
               </div>
             </div>
-            <div style={statCardStyle}>
+            <div style={{ ...cardStyle, textAlign: 'center' }}>
               <div
                 style={{
                   fontSize: '13px',
@@ -960,7 +920,6 @@ export default function EventBudgetPage() {
             </div>
           </div>
 
-          {/* Budget Variance */}
           {variance && (
             <div style={cardStyle}>
               <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600' }}>
@@ -1009,7 +968,6 @@ export default function EventBudgetPage() {
             </div>
           )}
 
-          {/* Income Statement */}
           {incomeStatement && (
             <div style={cardStyle}>
               <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600' }}>
@@ -1068,7 +1026,6 @@ export default function EventBudgetPage() {
         </div>
       )}
 
-      {/* No Budget Selected Message */}
       {activeTab !== 'budgets' && !selectedBudget && !loading && (
         <div
           style={{
@@ -1089,7 +1046,6 @@ export default function EventBudgetPage() {
             <h3 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: '600' }}>
               Create Budget
             </h3>
-
             <label style={labelStyle}>Budget Name *</label>
             <input
               style={inputStyle}
@@ -1098,7 +1054,6 @@ export default function EventBudgetPage() {
               value={budgetForm.name}
               onChange={(e) => setBudgetForm({ ...budgetForm, name: e.target.value })}
             />
-
             <label style={labelStyle}>Event ID (optional)</label>
             <input
               style={inputStyle}
@@ -1107,7 +1062,6 @@ export default function EventBudgetPage() {
               value={budgetForm.eventId}
               onChange={(e) => setBudgetForm({ ...budgetForm, eventId: e.target.value })}
             />
-
             <label style={labelStyle}>Total Budget Amount ($) *</label>
             <input
               style={inputStyle}
@@ -1116,7 +1070,6 @@ export default function EventBudgetPage() {
               value={budgetForm.totalAmount}
               onChange={(e) => setBudgetForm({ ...budgetForm, totalAmount: e.target.value })}
             />
-
             <label style={labelStyle}>Start Date</label>
             <input
               style={inputStyle}
@@ -1124,7 +1077,6 @@ export default function EventBudgetPage() {
               value={budgetForm.startDate}
               onChange={(e) => setBudgetForm({ ...budgetForm, startDate: e.target.value })}
             />
-
             <label style={labelStyle}>End Date</label>
             <input
               style={inputStyle}
@@ -1132,7 +1084,6 @@ export default function EventBudgetPage() {
               value={budgetForm.endDate}
               onChange={(e) => setBudgetForm({ ...budgetForm, endDate: e.target.value })}
             />
-
             <div
               style={{
                 display: 'flex',
@@ -1159,7 +1110,6 @@ export default function EventBudgetPage() {
             <h3 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: '600' }}>
               Add Expense
             </h3>
-
             <label style={labelStyle}>Expense Name *</label>
             <input
               style={inputStyle}
@@ -1168,7 +1118,6 @@ export default function EventBudgetPage() {
               value={expenseForm.name}
               onChange={(e) => setExpenseForm({ ...expenseForm, name: e.target.value })}
             />
-
             <label style={labelStyle}>Amount ($) *</label>
             <input
               style={inputStyle}
@@ -1177,7 +1126,6 @@ export default function EventBudgetPage() {
               value={expenseForm.amount}
               onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
             />
-
             <label style={labelStyle}>Category</label>
             <select
               style={selectStyle}
@@ -1190,7 +1138,6 @@ export default function EventBudgetPage() {
                 </option>
               ))}
             </select>
-
             <label style={labelStyle}>Receipt URL (optional)</label>
             <input
               style={inputStyle}
@@ -1199,7 +1146,6 @@ export default function EventBudgetPage() {
               value={expenseForm.receiptUrl}
               onChange={(e) => setExpenseForm({ ...expenseForm, receiptUrl: e.target.value })}
             />
-
             <div
               style={{
                 display: 'flex',
@@ -1226,7 +1172,6 @@ export default function EventBudgetPage() {
             <h3 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: '600' }}>
               Add Revenue
             </h3>
-
             <label style={labelStyle}>Revenue Source *</label>
             <select
               style={selectStyle}
@@ -1239,7 +1184,6 @@ export default function EventBudgetPage() {
                 </option>
               ))}
             </select>
-
             <label style={labelStyle}>Amount ($) *</label>
             <input
               style={inputStyle}
@@ -1248,7 +1192,6 @@ export default function EventBudgetPage() {
               value={revenueForm.amount}
               onChange={(e) => setRevenueForm({ ...revenueForm, amount: e.target.value })}
             />
-
             <label style={labelStyle}>Description</label>
             <input
               style={inputStyle}
@@ -1257,7 +1200,6 @@ export default function EventBudgetPage() {
               value={revenueForm.description}
               onChange={(e) => setRevenueForm({ ...revenueForm, description: e.target.value })}
             />
-
             <div
               style={{
                 display: 'flex',
