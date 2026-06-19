@@ -1,4 +1,5 @@
 import passport from 'passport';
+import { studentUsersRepository } from '../repositories/studentUsersRepository.js';
 
 export const googleAuth = passport.authenticate('google', {
   session: false,
@@ -48,11 +49,35 @@ export const githubCallback = (req, res, next) => {
   })(req, res, next);
 };
 
-export const getMe = (req, res) => {
+export const getMe = async (req, res) => {
   if (!req.studentUser) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
+  try {
+    const fullUser = await studentUsersRepository.findByEmail(req.studentUser.email);
+    if (fullUser) {
+      return res.json({ user: { ...req.studentUser, ...fullUser } });
+    }
+  } catch (err) {
+    // ignore and return payload-only
+  }
   return res.json({ user: req.studentUser });
+};
+
+export const updateSlackSettings = async (req, res) => {
+  if (!req.studentUser) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  const { slackUserId, slackDmReminders } = req.body;
+  try {
+    const updatedUser = await studentUsersRepository.updateSlackSettings(req.studentUser.email, {
+      slackUserId,
+      slackDmReminders,
+    });
+    return res.json({ success: true, user: { ...req.studentUser, ...updatedUser } });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update Slack settings: ' + err.message });
+  }
 };
 
 export const logout = (req, res) => {

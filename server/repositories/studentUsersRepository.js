@@ -1,5 +1,33 @@
+import { promises as fs } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { withDb } from './db.js';
 import { HAS_SUPABASE } from '../storage/supabaseClient.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const SLACK_STUDENTS_FILE = path.join(__dirname, '..', 'data', 'student_users_slack.json');
+
+async function ensureLocalFile() {
+  const dir = path.dirname(SLACK_STUDENTS_FILE);
+  await fs.mkdir(dir, { recursive: true });
+  try {
+    await fs.access(SLACK_STUDENTS_FILE);
+  } catch {
+    await fs.writeFile(SLACK_STUDENTS_FILE, JSON.stringify({}, null, 2), 'utf8');
+  }
+}
+
+async function readLocalSlackSettings() {
+  await ensureLocalFile();
+  const raw = await fs.readFile(SLACK_STUDENTS_FILE, 'utf8');
+  return JSON.parse(raw);
+}
+
+async function writeLocalSlackSettings(data) {
+  await ensureLocalFile();
+  await fs.writeFile(SLACK_STUDENTS_FILE, JSON.stringify(data, null, 2), 'utf8');
+}
 
 export const studentUsersRepository = {
   async ensureSchema() {
@@ -24,6 +52,12 @@ export const studentUsersRepository = {
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_student_users_email ON student_users(email)
       `);
+      await client.query(`
+        ALTER TABLE student_users ADD COLUMN IF NOT EXISTS slack_user_id VARCHAR(255) DEFAULT NULL;
+      `);
+      await client.query(`
+        ALTER TABLE student_users ADD COLUMN IF NOT EXISTS slack_dm_reminders BOOLEAN DEFAULT FALSE;
+      `);
     });
   },
 
@@ -39,7 +73,16 @@ export const studentUsersRepository = {
   },
 
   async findByEmail(email) {
-    if (!HAS_SUPABASE) return null;
+    if (!HAS_SUPABASE) {
+      const localSettings = await readLocalSlackSettings();
+      const settings = localSettings[email] || {};
+      return {
+        email,
+        full_name: 'Local Student',
+        slack_user_id: settings.slackUserId || null,
+        slack_dm_reminders: settings.slackDmReminders || false,
+      };
+    }
     return withDb(async (client) => {
       const { rows } = await client.query('SELECT * FROM student_users WHERE email = $1 LIMIT 1', [
         email,
@@ -112,6 +155,32 @@ export const studentUsersRepository = {
         'SELECT * FROM student_users ORDER BY last_login_at DESC'
       );
       return rows;
+    });
+  },
+
+  async updateSlackSettings(email, { slackUserId, slackDmReminders }) {
+    if (!HAS_SUPABASE) {
+      const localSettings = await readLocalSlackSettings();
+      localSettings[email] = {
+        slackUserId,
+        slackDmReminders: Boolean(slackDmReminders),
+      };
+      await writeLocalSlackSettings(localSettings);
+      return {
+        email,
+        slack_user_id: slackUserId,
+        slack_dm_reminders: Boolean(slackDmReminders),
+      };
+    }
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        `UPDATE student_users
+         SET slack_user_id = $1, slack_dm_reminders = $2, updated_at = NOW()
+         WHERE email = $3
+         RETURNING *`,
+        [slackUserId, Boolean(slackDmReminders), email]
+      );
+      return rows[0] || null;
     });
   },
 };
