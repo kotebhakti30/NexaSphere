@@ -147,15 +147,24 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
+            const results = {
+              lint: '${{ needs.lint.result }}',
+              website: '${{ needs.website.result }}',
+              adminDashboard: '${{ needs.admin-dashboard.result }}',
+              server: '${{ needs.server.result }}',
+            };
+
+            const icon = (r) => r === 'success' ? '✅' : r === 'skipped' ? '⏭️' : '❌';
+
             const body = `
             ## CI Pipeline Results
 
-            ✅ Lint passed
-            ✅ Website build passed
-            ✅ Admin dashboard tests passed
-            ✅ Server tests passed
+            ${icon(results.lint)} Lint — ${results.lint}
+            ${icon(results.website)} Website build — ${results.website}
+            ${icon(results.adminDashboard)} Admin dashboard tests — ${results.adminDashboard}
+            ${icon(results.server)} Server tests — ${results.server}
 
-            CI pipeline completed successfully.
+            ${Object.values(results).every(r => r === 'success') ? 'CI pipeline completed successfully.' : '⚠️ One or more jobs failed. Please review the logs.'}
             `;
 
             await github.rest.issues.createComment({
