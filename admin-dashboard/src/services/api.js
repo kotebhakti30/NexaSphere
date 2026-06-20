@@ -762,6 +762,48 @@ async function fetchWithAuth(url, options = {}) {
           resolve({ success: true });
         }
       }
+
+      // /api/admin/reports/engagement
+      else if (url.startsWith('/api/admin/reports/engagement')) {
+        if (method === 'GET') {
+          // Generate mock engagement data
+          const seedUsers = Array.from({ length: 45 }, (_, i) => {
+            const eventsAttended = Math.floor(Math.random() * 15);
+            const portfolioCompletion = Math.floor(Math.random() * 101);
+            const activeDays30 = Math.floor(Math.random() * 31);
+            const activeDays90 = Math.floor(Math.random() * 91);
+
+            // Engagement scoring logic:
+            // 40% based on active days in last 30 days (max 30 points -> scaled to 40)
+            // 30% based on events attended (max 10 events -> scaled to 30)
+            // 30% based on portfolio completion (max 100 -> scaled to 30)
+            const score30 = Math.min((activeDays30 / 30) * 40, 40);
+            const scoreEvents = Math.min((eventsAttended / 10) * 30, 30);
+            const scorePortfolio = (portfolioCompletion / 100) * 30;
+            const engagementScore = Math.round(score30 + scoreEvents + scorePortfolio);
+
+            // Inactive user detection:
+            // Less than 2 active days in the last 30 days AND attended 0 events
+            const isInactive = activeDays30 < 2 && eventsAttended === 0;
+
+            return {
+              id: `user-${i + 1}`,
+              name: `Community Member ${i + 1}`,
+              eventsAttended,
+              portfolioCompletion,
+              activeDays30,
+              activeDays90,
+              engagementScore,
+              status: isInactive ? 'Inactive' : 'Active',
+            };
+          });
+
+          // Sort by engagement score descending
+          seedUsers.sort((a, b) => b.engagementScore - a.engagementScore);
+
+          resolve({ users: seedUsers });
+        }
+      }
     }, 300); // simulate slight network delay
   });
 }
@@ -1289,6 +1331,10 @@ export const api = {
       eventEmitter.emit(EVENTS.NOTIFY, { type: 'success', message: `Reply ${status}` });
       return result;
     },
+  },
+
+  reports: {
+    getEngagement: () => fetchWithAuth('/api/admin/reports/engagement'),
   },
 };
 
