@@ -159,8 +159,32 @@ export const activityAuthRateLimiter = rateLimit({
   },
 });
 
+<<<<<<< HEAD
 // Portfolio update rate limiter — 10 requests per IP per 15 minutes
 // Portfolio update rate limiter — 10 requests per IP per 15 minutes
+=======
+// Sync batch rate limiter — 10 requests per IP per minute.
+// Applied to the write-heavy POST /api/sync/batch which previously had no
+// rate limiting or authentication at all.
+export const syncRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRateLimitStore('rate-limit:sync:'),
+  handler: (req, res, next, options) => {
+    logger.warn('Sync batch rate limit exceeded', {
+      ip: req.ip,
+      path: req.originalUrl || req.path,
+      method: req.method,
+    });
+    res.status(options.statusCode).json({
+      error: 'Too many sync requests from this IP, please try again later.',
+    });
+  },
+});
+
+>>>>>>> pr-resolve-1977
 export const portfolioRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -202,6 +226,7 @@ export function validateLimiters() {
     authRateLimiter,
     notificationRateLimiter,
     activityAuthRateLimiter,
+    syncRateLimiter,
     portfolioRateLimiter,
     searchRateLimiter,
   };

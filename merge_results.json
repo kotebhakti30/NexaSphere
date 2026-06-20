@@ -1,0 +1,503 @@
+﻿{
+    "failed":  [
+                   {
+                       "number":  2490,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2490 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat(reports): add User Engagement Report dashboard (#1589)"
+                   },
+                   {
+                       "number":  2479,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2479 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat(backup): implement comprehensive data backup \u0026 disaster recovery system"
+                   },
+                   {
+                       "number":  2474,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2474 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: full dark mode implementation, settings preference toggle, database sync, and theme-adaptive charts (#1795)"
+                   },
+                   {
+                       "number":  2420,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2420 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: consolidate redundant parseInt invocations in ForumThreadPage.jsx"
+                   },
+                   {
+                       "number":  2414,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2414 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: prevent timer leaks on unmount in ContactPage.jsx"
+                   },
+                   {
+                       "number":  2401,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2401 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: mitigate timing attack vulnerability in token verification"
+                   },
+                   {
+                       "number":  2400,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2400 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: add missing lazy import for ResourcesPage"
+                   },
+                   {
+                       "number":  2396,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2396 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "Fix: nav links missing hover color transition"
+                   },
+                   {
+                       "number":  2392,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2392 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement portfolio export as PDF and website"
+                   },
+                   {
+                       "number":  2391,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2391 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement advanced logging and request tracing"
+                   },
+                   {
+                       "number":  2389,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2389 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement event budget management and financial tracking"
+                   },
+                   {
+                       "number":  2388,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2388 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement system health monitoring dashboard"
+                   },
+                   {
+                       "number":  2387,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2387 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement admin content moderation queue"
+                   },
+                   {
+                       "number":  2386,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2386 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement automated email campaign system"
+                   },
+                   {
+                       "number":  2383,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2383 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement Role-Based Access Control (RBAC) system #1759"
+                   },
+                   {
+                       "number":  2376,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2376 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "Fix fetch instrumentation race by replacing global patch with tracedFetch"
+                   },
+                   {
+                       "number":  2363,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2363 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement event budget management \u0026 financial tracking"
+                   },
+                   {
+                       "number":  2349,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2349 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat(feature-flags): implement feature flag management system #1768"
+                   },
+                   {
+                       "number":  2348,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2348 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: Admin Audit Log \u0026 Activity Tracking (#1767)"
+                   },
+                   {
+                       "number":  2347,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2347 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement bulk data operations and import/export system (#1766)"
+                   },
+                   {
+                       "number":  2346,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2346 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat(announcements): implement Announcement Scheduling and Targeting System (#1765)"
+                   },
+                   {
+                       "number":  2343,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2343 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat(search): implement advanced search with faceted filters and auto-complete"
+                   },
+                   {
+                       "number":  2342,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2342 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat(events): implement networking hub with directory, scheduler, and qr codes"
+                   },
+                   {
+                       "number":  2336,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2336 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement structured learning paths and recommendation engine"
+                   },
+                   {
+                       "number":  2334,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2334 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: add multi-language i18n support with RTL for Arabic (#1742)"
+                   },
+                   {
+                       "number":  2332,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2332 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: mount notificationsRouter at / and enforce auth regardless of userId value"
+                   },
+                   {
+                       "number":  2331,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2331 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: Implement Admin Analytics Dashboard with Custom Reports (#1758)"
+                   },
+                   {
+                       "number":  2329,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2329 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "Feature/feedback nps system"
+                   },
+                   {
+                       "number":  2327,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2327 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat(dr): Implement comprehensive disaster recovery and business contΓÇª"
+                   },
+                   {
+                       "number":  2309,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2309 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement live event streaming with chat and real-time engagement"
+                   },
+                   {
+                       "number":  2308,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2308 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: resolve AppShell unmount crash and visibilitychange memory leak"
+                   },
+                   {
+                       "number":  2307,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2307 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "Feature/photo gallery ai tagging"
+                   },
+                   {
+                       "number":  2306,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2306 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "Feature/cdn integration"
+                   },
+                   {
+                       "number":  2304,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2304 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: Implement Event Discovery Recommendation Engine (#1784)"
+                   },
+                   {
+                       "number":  2303,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2303 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "Feature/database migration strategy"
+                   },
+                   {
+                       "number":  2302,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2302 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "Feature/api gateway proxy"
+                   },
+                   {
+                       "number":  2301,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2301 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: Implement Advanced User Lifecycle Management MVP (#1755)"
+                   },
+                   {
+                       "number":  2300,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2300 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "Feature/service worker updates"
+                   },
+                   {
+                       "number":  2299,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2299 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat(resources): bookmarks, sorting, topic/access filters, event linkΓÇª"
+                   },
+                   {
+                       "number":  2295,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2295 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: Implement Event Feedback Loop MVP (#1788)"
+                   },
+                   {
+                       "number":  2292,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2292 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "Setup baseline visual regression testing"
+                   },
+                   {
+                       "number":  2285,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2285 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: remove duplicate readOnlyMode imports and routes"
+                   },
+                   {
+                       "number":  2274,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2274 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "[fix] Hash recovery codes, store in DB, never return in API response (fixes #2203)"
+                   },
+                   {
+                       "number":  2186,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2186 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: add API endpoint protection and access control framework"
+                   },
+                   {
+                       "number":  2183,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2183 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement advanced data encryption and key management framework"
+                   },
+                   {
+                       "number":  2175,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2175 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement automated security patch management system"
+                   },
+                   {
+                       "number":  2159,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2159 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "build(deps): bump lucide-react from 1.17.0 to 1.20.0"
+                   },
+                   {
+                       "number":  2158,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2158 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "build(deps-dev): bump eslint-plugin-react-refresh from 0.5.2 to 0.5.3"
+                   },
+                   {
+                       "number":  2157,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2157 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "build(deps): bump @prisma/client from 5.22.0 to 7.8.0"
+                   },
+                   {
+                       "number":  2156,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2156 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "build(deps-dev): bump @playwright/test from 1.60.0 to 1.61.0"
+                   },
+                   {
+                       "number":  2155,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2155 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "build(deps): bump @rollup/rollup-linux-x64-gnu from 4.60.0 to 4.62.2"
+                   },
+                   {
+                       "number":  2154,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2154 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "build(deps): bump @sentry/react from 10.56.0 to 10.58.0"
+                   },
+                   {
+                       "number":  2153,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2153 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "build(deps-dev): bump @vitest/ui from 4.1.8 to 4.1.9"
+                   },
+                   {
+                       "number":  2152,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2152 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "build(deps-dev): bump eslint from 10.4.1 to 10.5.0"
+                   },
+                   {
+                       "number":  2151,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2151 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "build(deps-dev): bump vitest from 4.1.8 to 4.1.9"
+                   },
+                   {
+                       "number":  2145,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2145 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "build(deps-dev): bump prisma from 5.22.0 to 7.8.0"
+                   },
+                   {
+                       "number":  2108,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2108 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat(offline): implement GET request caching for offline mobile experience"
+                   },
+                   {
+                       "number":  2068,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2068 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: resolve Stored XSS in Java controllers via input sanitization"
+                   },
+                   {
+                       "number":  2067,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2067 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: admin notification and alert configuration (#1772)"
+                   },
+                   {
+                       "number":  2064,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2064 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: event sponsorship marketplace (#1790)"
+                   },
+                   {
+                       "number":  2061,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2061 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: peer-to-peer skill exchange (#1789)"
+                   },
+                   {
+                       "number":  2059,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2059 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "Feat/issue 1785 event planning"
+                   },
+                   {
+                       "number":  2057,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2057 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: add admin user impersonation for support (#1769)"
+                   },
+                   {
+                       "number":  2056,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2056 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: Advanced Analytics with Custom Date Ranges (#1796)"
+                   },
+                   {
+                       "number":  2055,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2055 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: User Subscription \u0026 Premium Features (#1794)"
+                   },
+                   {
+                       "number":  2054,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2054 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: Event Live Q\u0026A and Polling (#1792)"
+                   },
+                   {
+                       "number":  2053,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2053 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat: implement Event Virtual Waiting Room \u0026 Queue Management system"
+                   },
+                   {
+                       "number":  2052,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2052 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: resolve race conditions and partial failures on form submissions(#983)"
+                   },
+                   {
+                       "number":  2043,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#2043 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "refactor: eliminate duplicate inline routes, fix module mount paths (fixes #1895)"
+                   },
+                   {
+                       "number":  1994,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1994 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat(gamification): Restore \u0026 Integrate Gamification Hub with Robust Streak Engine \u0026 Toast System"
+                   },
+                   {
+                       "number":  1977,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1977 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: add authentication, rate limiting, and input validation to sync endpoints"
+                   },
+                   {
+                       "number":  1976,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1976 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: replace hardcoded JWT fallback with validation helper"
+                   },
+                   {
+                       "number":  1975,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1975 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: remove JWT token from OAuth redirect URL"
+                   },
+                   {
+                       "number":  1974,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1974 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: admin login frontend sends username instead of email (Option A)"
+                   },
+                   {
+                       "number":  1972,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1972 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: add sanitization for portfolio avatarUrl, education, workExperience"
+                   },
+                   {
+                       "number":  1971,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1971 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: add rate limiting to event registration endpoint"
+                   },
+                   {
+                       "number":  1970,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1970 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: add token blacklist for student JWT revocation"
+                   },
+                   {
+                       "number":  1969,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1969 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: validate social link URLs against allowed domains (XSS prevention)"
+                   },
+                   {
+                       "number":  1968,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1968 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: add rate limiting and pagination to search/discovery endpoints"
+                   },
+                   {
+                       "number":  1966,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1966 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "fix: add CSRF protection via double-submit cookie pattern"
+                   },
+                   {
+                       "number":  1870,
+                       "error":  "X Pull request Ayushh-Sharmaa/NexaSphere#1870 is not mergeable: the merge commit cannot be cleanly created. To have the pull request merged after all the requirements have been met, add the `--auto` flag.",
+                       "title":  "feat(notification): implement notification orchestration preferences"
+                   }
+               ],
+    "merged":  [
+                   2491,
+                   2486,
+                   2485,
+                   2484,
+                   2483,
+                   2472,
+                   2471,
+                   2470,
+                   2469,
+                   2468,
+                   2467,
+                   2460,
+                   2459,
+                   2458,
+                   2457,
+                   2456,
+                   2455,
+                   2454,
+                   2453,
+                   2452,
+                   2451,
+                   2450,
+                   2449,
+                   2448,
+                   2447,
+                   2446,
+                   2445,
+                   2444,
+                   2443,
+                   2442,
+                   2421,
+                   2419,
+                   2418,
+                   2417,
+                   2416,
+                   2405,
+                   2404,
+                   2398,
+                   2395,
+                   2393,
+                   2390,
+                   2385,
+                   2370,
+                   2369,
+                   2368,
+                   2367,
+                   2366,
+                   2365,
+                   2362,
+                   2361,
+                   2360,
+                   2345,
+                   2344,
+                   2341,
+                   2340,
+                   2338,
+                   2337,
+                   2333,
+                   2330,
+                   2328,
+                   2325,
+                   2321,
+                   2298,
+                   2291,
+                   2290,
+                   2288,
+                   2287,
+                   2286,
+                   2280,
+                   2278,
+                   2276,
+                   2275,
+                   2273,
+                   2207,
+                   2194,
+                   2192,
+                   2185,
+                   2184,
+                   2150,
+                   2149,
+                   2148,
+                   2147,
+                   2146,
+                   2144,
+                   2143,
+                   2142,
+                   2141,
+                   2140,
+                   2096,
+                   2042,
+                   2040
+               ],
+    "total":  172
+}
