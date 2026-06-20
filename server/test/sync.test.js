@@ -33,6 +33,15 @@ setWithDbOverride(async (fn) => {
 });
 
 test('Offline-First Sync and Compression Verification', async (t) => {
+  const { studentAuthService } = await import('../services/studentAuthService.js');
+  const testToken = studentAuthService.generateToken({
+    id: 'student-123',
+    provider: 'github',
+    email: 'student@example.com',
+    full_name: 'Test Student',
+    role: 'student',
+  });
+
   const { default: app } = await import('../index.js');
   const server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, resolve));
@@ -125,7 +134,9 @@ test('Offline-First Sync and Compression Verification', async (t) => {
         ],
       };
 
-      const res = await sendRequest('POST', '/api/sync/batch', batchPayload);
+      const res = await sendRequest('POST', '/api/sync/batch', batchPayload, {
+        Authorization: `Bearer ${testToken}`,
+      });
       assert.equal(res.status, 409); // Conflict status
       assert.equal(res.body.results[0].status, 'conflict');
       assert.ok(res.body.results[0].serverVersion);
@@ -154,7 +165,9 @@ test('Offline-First Sync and Compression Verification', async (t) => {
         ],
       };
 
-      const res = await sendRequest('POST', '/api/sync/batch', batchPayload);
+      const res = await sendRequest('POST', '/api/sync/batch', batchPayload, {
+        Authorization: `Bearer ${testToken}`,
+      });
       assert.equal(res.status, 200);
       assert.equal(res.body.results[0].status, 'success');
     });

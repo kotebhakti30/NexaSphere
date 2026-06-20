@@ -28,7 +28,7 @@ import portfolioRouter from './routes/portfolio.js';
 import portfolioExportRouter from './routes/portfolioExport.js';
 import notificationsRouter from './routes/notifications.js';
 import adminRouter from './routes/admin.js';
-import rbacRouter from './routes/rbac.js';
+import featureFlagsRouter from './routes/featureFlags.js';
 import { validateEnvironment } from './utils/envValidator.js';
 import { performanceMonitor } from './middleware/performanceMonitor.js';
 import { enhancedTracingMiddleware } from './middleware/enhancedTracingMiddleware.js';
@@ -344,8 +344,7 @@ app.use('/api', notificationsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', financialsRouter);
 app.use('/', syncRouter);
-app.use('/api', financialsRouter);
-app.use('/api', emailCampaignsRouter);
+app.use('/', featureFlagsRouter);
 
 const adminAuth = [apiRateLimiter, adminAuthMiddleware.requireAdmin];
 
