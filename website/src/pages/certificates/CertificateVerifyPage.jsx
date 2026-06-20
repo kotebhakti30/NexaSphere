@@ -13,7 +13,7 @@
 
 import { useEffect, useState } from 'react';
 import { getApiBase } from '../../utils/runtimeConfig';
-import { apiClient } from '../../utils/apiClient';
+import apiClient from '../../utils/apiClient.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
