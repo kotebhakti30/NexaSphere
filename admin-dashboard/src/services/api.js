@@ -1271,6 +1271,23 @@ export const api = {
       notifyContentUpdated('ns_db_announcements');
     },
   },
+  alerts: {
+    getRules: () => fetchWithAuth('/api/admin/alerts/rules'),
+    updateRule: (id, body) =>
+      fetchWithAuth(`/api/admin/alerts/rules/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+    getEvents: () => fetchWithAuth('/api/admin/alerts/events'),
+    updateEventStatus: (id, status) =>
+      fetchWithAuth(`/api/admin/alerts/events/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      }),
+  },
+
   circuitBreaker: {
     getMetrics: () => fetchWithAuth('/api/admin/circuit-breaker/metrics'),
     reset: (name) =>

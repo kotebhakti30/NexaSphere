@@ -294,30 +294,105 @@ router.delete(
   }
 );
 
-// Sponsorship management APIs
-router.get('/api/content/sponsors', sponsorshipsController.listSponsors);
-router.get(
-  '/api/admin/sponsors',
-  adminAuthMiddleware.requireScope('events:read'),
-  sponsorshipsController.adminListSponsors
-);
-router.post(
-  '/api/admin/sponsors',
-  adminAuthMiddleware.requireScope('events:write'),
-  adminAuditMiddleware,
-  sponsorshipsController.adminCreateSponsor
-);
-router.put(
-  '/api/admin/sponsors/:id',
-  adminAuthMiddleware.requireScope('events:write'),
-  adminAuditMiddleware,
-  sponsorshipsController.adminUpdateSponsor
-);
-router.delete(
-  '/api/admin/sponsors/:id',
-  adminAuthMiddleware.requireScope('events:write'),
-  adminAuditMiddleware,
-  sponsorshipsController.adminDeleteSponsor
-);
+// Admin Alerts
+const alerts = [];
+const alertRules = [
+  {
+    id: 'sec-1',
+    category: 'Security',
+    label: 'Failed login attempts',
+    condition: '>',
+    threshold: 10,
+    severity: 'Warning',
+    channels: ['Email'],
+    enabled: true,
+  },
+  {
+    id: 'sec-2',
+    category: 'Security',
+    label: 'Suspicious activity detected',
+    condition: '>',
+    threshold: 0,
+    severity: 'Critical',
+    channels: ['Email', 'Slack'],
+    enabled: true,
+  },
+  {
+    id: 'perf-1',
+    category: 'Performance',
+    label: 'High response time',
+    condition: '>',
+    threshold: 2000,
+    severity: 'Warning',
+    channels: ['Email'],
+    enabled: true,
+  },
+  {
+    id: 'perf-2',
+    category: 'Performance',
+    label: 'Error rate spike',
+    condition: '>',
+    threshold: 5,
+    severity: 'Critical',
+    channels: ['Email', 'Slack'],
+    enabled: true,
+  },
+  {
+    id: 'sys-1',
+    category: 'System',
+    label: 'Service down',
+    condition: '==',
+    threshold: 0,
+    severity: 'Critical',
+    channels: ['Email', 'Slack', 'SMS'],
+    enabled: true,
+  },
+  {
+    id: 'usr-1',
+    category: 'User Activity',
+    label: 'Registration spike',
+    condition: '>',
+    threshold: 100,
+    severity: 'Info',
+    channels: ['Email'],
+    enabled: true,
+  },
+  {
+    id: 'fin-1',
+    category: 'Financial',
+    label: 'Payment failure',
+    condition: '>',
+    threshold: 5,
+    severity: 'Critical',
+    channels: ['Email', 'Slack'],
+    enabled: true,
+  },
+  {
+    id: 'cnt-1',
+    category: 'Content',
+    label: 'Content flagged for moderation',
+    condition: '>',
+    threshold: 3,
+    severity: 'Warning',
+    channels: ['Email'],
+    enabled: true,
+  },
+];
+
+router.get('/api/admin/alerts/rules', (req, res) => res.json({ rules: alertRules }));
+router.put('/api/admin/alerts/rules/:id', (req, res) => {
+  const rule = alertRules.find((r) => r.id === req.params.id);
+  if (!rule) return res.status(404).json({ error: 'Rule not found' });
+  Object.assign(rule, req.body);
+  res.json(rule);
+});
+router.get('/api/admin/alerts/events', (req, res) => res.json({ events: alerts }));
+router.put('/api/admin/alerts/events/:id/status', (req, res) => {
+  const event = alerts.find((e) => e.id === req.params.id);
+  if (!event) return res.status(404).json({ error: 'Event not found' });
+  event.status = req.body.status;
+  event.resolvedAt = req.body.status === 'resolved' ? new Date().toISOString() : null;
+  res.json(event);
+});
 
 export default router;

@@ -20,9 +20,8 @@ import { PortfolioManager } from './pages/PortfolioManager';
 import { StreamManager } from './pages/StreamManager';
 import { CircuitBreakerManager } from './pages/CircuitBreakerManager';
 import { ResourcesManager } from './pages/ResourcesManager';
-import { ComplianceManager } from './pages/ComplianceManager';
-import { SponsorshipsManager } from './pages/SponsorshipsManager';
-import { ComprehensiveAnalytics } from './pages/ComprehensiveAnalytics';
+import { ScheduledTasksManager } from './pages/ScheduledTasksManager';
+import { AlertManager } from './pages/AlertManager';
 import './styles/admin.css';
 
 function RequireAuth() {
@@ -80,9 +79,8 @@ export default function App() {
             <Route path="/dashboard/streams" element={<StreamManager />} />
             <Route path="/dashboard/circuit-breaker" element={<CircuitBreakerManager />} />
             <Route path="/dashboard/resources" element={<ResourcesManager />} />
-            <Route path="/dashboard/compliance" element={<ComplianceManager />} />
-            <Route path="/dashboard/sponsorships" element={<SponsorshipsManager />} />
-            <Route path="/dashboard/rbac" element={<RBACManager />} />
+            <Route path="/dashboard/scheduled-tasks" element={<ScheduledTasksManager />} />
+            <Route path="/dashboard/alerts" element={<AlertManager />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />

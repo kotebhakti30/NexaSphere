@@ -74,10 +74,9 @@ const links = [
     requiredScope: 'settings:admin',
   },
   {
-    to: '/dashboard/rbac',
-    label: 'Access Control',
-    icon: 'Shield',
-    requiredScope: 'rbac:read',
+    to: '/dashboard/alerts',
+    label: 'Alerts',
+    icon: 'Bell',
   },
 ];
 
