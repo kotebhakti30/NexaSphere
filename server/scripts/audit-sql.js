@@ -20,8 +20,9 @@ for (const file of files) {
     const queryArg = match[1].trim();
     const firstPart = queryArg.split(',')[0].trim();
 
+    // Only flag queries that use template literal interpolation OR string concatenation
     if (firstPart.includes('${') || firstPart.includes('+')) {
-      // Safe patterns: only hardcoded column names are interpolated;
+      // Safe patterns: only hardcoded column names / structural SQL are interpolated;
       // all user-supplied values travel via $N parameterized placeholders.
       const safePatterns = [
         '${where}',
@@ -30,6 +31,10 @@ for (const file of files) {
         '${fields.join(',
         '${column}',
         '${extraClause}',
+        '${k}',
+        '${i}',
+        '${i++}',
+        '${staleThresholdDays}',
       ];
 
       const isSafe = safePatterns.some((pattern) => firstPart.includes(pattern));

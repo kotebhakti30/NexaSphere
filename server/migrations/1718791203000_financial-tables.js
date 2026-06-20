@@ -1,4 +1,5 @@
--- Financial tables for event budget management
+﻿export const up = (pgm) => {
+  pgm.sql(`-- Financial tables for event budget management
 -- Tables are created only if they do not already exist.
 
 CREATE TABLE IF NOT EXISTS event_budgets (
@@ -55,3 +56,10 @@ CREATE TABLE IF NOT EXISTS financial_audit_trail (
 CREATE INDEX IF NOT EXISTS idx_expenses_budget_id ON expenses(budget_id);
 CREATE INDEX IF NOT EXISTS idx_revenue_entries_budget_id ON revenue_entries(budget_id);
 CREATE INDEX IF NOT EXISTS idx_financial_audit_trail_record ON financial_audit_trail(record_type, record_id);
+`);
+};
+
+export const down = (_pgm) => {
+  // down migration not implemented
+};
+

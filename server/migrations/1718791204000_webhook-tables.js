@@ -1,4 +1,5 @@
--- Webhook tables for event-driven architecture
+﻿export const up = (pgm) => {
+  pgm.sql(`-- Webhook tables for event-driven architecture
 -- Tables are created only if they do not already exist.
 
 CREATE TABLE IF NOT EXISTS webhooks (
@@ -35,3 +36,10 @@ CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_webhook_id ON webhook_deliveri
 CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_status ON webhook_deliveries(status);
 CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_delivery_id ON webhook_deliveries(delivery_id);
 CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_next_retry ON webhook_deliveries(next_retry_at) WHERE status = 'pending';
+`);
+};
+
+export const down = (_pgm) => {
+  // down migration not implemented
+};
+

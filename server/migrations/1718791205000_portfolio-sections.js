@@ -1,4 +1,5 @@
--- Portfolio sections table for drag-and-drop section management
+﻿export const up = (pgm) => {
+  pgm.sql(`-- Portfolio sections table for drag-and-drop section management
 -- Tables are created only if they do not already exist.
 
 CREATE TABLE IF NOT EXISTS portfolio_sections (
@@ -46,3 +47,10 @@ INSERT INTO portfolio_section_templates (id, name, description, section_type, de
 ('speaking', 'Speaking Engagements', 'Talks and presentations', 'speaking', '{"items": []}', 'mic'),
 ('volunteer', 'Volunteer Work', 'Community service and volunteering', 'volunteer', '{"items": []}', 'users')
 ON CONFLICT (id) DO NOTHING;
+`);
+};
+
+export const down = (_pgm) => {
+  // down migration not implemented
+};
+
