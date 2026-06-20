@@ -77,6 +77,9 @@ import multer from 'multer';
 import * as resourcesController from './controllers/resourcesController.js';
 import scheduledTasksRouter from './routes/scheduledTasks.js';
 import { schedulerService } from './services/schedulerService.js';
+import { slackRepository } from './repositories/slackRepository.js';
+import { slackIntegrationService } from './services/slackIntegrationService.js';
+import * as slackController from './controllers/slackController.js';
 
 validateLimiters();
 
@@ -1038,6 +1041,15 @@ app.get('/api/auth/github/callback', studentAuthController.githubCallback);
 app.get('/api/auth/me', requireStudentAuth, studentAuthController.getMe);
 app.post('/api/auth/logout', studentAuthController.logout);
 
+// Slack Integration Endpoints
+app.post('/api/auth/slack-settings', requireStudentAuth, studentAuthController.updateSlackSettings);
+app.get('/api/slack/auth', slackController.startSlackAuth);
+app.get('/api/slack/auth/callback', slackController.slackAuthCallback);
+app.post('/api/slack/commands', express.urlencoded({ extended: true }), slackController.handleSlackCommand);
+app.get('/api/admin/slack/config', adminAuth, slackController.getSlackConfig);
+app.post('/api/admin/slack/config', adminAuth, slackController.updateSlackConfig);
+app.delete('/api/admin/slack/disconnect', adminAuth, slackController.disconnectSlack);
+
 // ── Event Admin Management ──
 app.get('/api/admin/events', adminAuth, eventsController.adminListEvents);
 app.post('/api/admin/events', adminAuth, eventsController.adminCreateEvent);
@@ -1747,9 +1759,12 @@ let server;
 
 if (process.env.NODE_ENV !== 'test') {
   if (!process.env.VERCEL) {
-    const boot = HAS_SUPABASE ? studentUsersRepository.ensureSchema() : ensureContentFile();
+    const boot = HAS_SUPABASE
+      ? Promise.all([studentUsersRepository.ensureSchema(), slackRepository.ensureSchema()])
+      : ensureContentFile();
     boot.then(() => {
       loadPersistedPushSubscriptions();
+      slackIntegrationService.init();
       server = app.listen(port, () => {
         console.log(`NexaSphere server listening on http://localhost:${port}`);
         schedulerService.init();
@@ -1757,6 +1772,7 @@ if (process.env.NODE_ENV !== 'test') {
     });
   } else {
     loadPersistedPushSubscriptions();
+    slackIntegrationService.init();
     server = app.listen(port, () => {
       console.log(`NexaSphere server listening on http://localhost:${port}`);
       schedulerService.init();

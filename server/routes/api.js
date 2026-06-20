@@ -199,20 +199,18 @@ router.get(
 router.post(
   '/api/admin/portfolios/:username/achievements',
   adminAuthMiddleware.requireScope('events:write'),
+  adminAuditMiddleware,
   async (req, res) => {
     try {
       const username = String(req.params.username || '')
         .trim()
         .toLowerCase();
-      const { name, description, tier, iconUrl, source } = req.body;
-      if (!name) return res.status(400).json({ error: 'Achievement name is required' });
-      const achievement = await portfolioService.awardAchievement(username, {
-        name: String(name).trim().slice(0, 120),
-        description: description ? String(description).trim().slice(0, 1000) : null,
-        tier: tier ? String(tier).trim().slice(0, 40) : 'bronze',
-        iconUrl: iconUrl ? String(iconUrl).trim().slice(0, 500) : null,
-        source: source ? String(source).trim().slice(0, 60) : 'admin',
-      });
+      const validated = achievementSchema.safeParse(req.body);
+      if (!validated.success) {
+        return res.status(400).json({ error: validated.error.errors[0].message });
+      }
+
+      const achievement = await portfolioService.awardAchievement(username, validated.data);
       return res.status(201).json({ achievement });
     } catch (err) {
       return res.status(500).json({ error: err.message });
@@ -222,6 +220,15 @@ router.post(
 router.delete(
   '/api/admin/portfolios/:username/achievements/:name',
   adminAuthMiddleware.requireScope('events:write'),
+  attachOldState(async (req) => {
+    const username = String(req.params.username || '')
+      .trim()
+      .toLowerCase();
+    const achievements = await achievementsRepository.getByUsername(username);
+    const targetName = String(req.params.name || '').trim();
+    return achievements.find((a) => a.name === targetName);
+  }),
+  adminAuditMiddleware,
   async (req, res) => {
     try {
       const username = String(req.params.username || '')
