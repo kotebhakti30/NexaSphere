@@ -43,8 +43,7 @@ export function StudentAuthProvider({ children }) {
         (params.toString() ? '?' + params.toString() : '') +
         window.location.hash;
       window.history.replaceState({}, '', cleanUrl);
-      fetchMe(urlToken);
-      setLoading(false);
+      fetchMe(urlToken).finally(() => setLoading(false));
       return;
     }
 
