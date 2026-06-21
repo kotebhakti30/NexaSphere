@@ -78,11 +78,21 @@ export default function CollabPage({ onBack }) {
     const requestsUrl = buildUrl(getApiBase(), '/api/collab/requests');
     if (!requestsUrl) return;
 
-    await fetch(requestsUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestData),
-    });
+    try {
+      const res = await fetch(requestsUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData),
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        console.error('[CollabPage] Failed to submit join request:', err.message);
+      }
+      alert('Something went wrong submitting your join request. Please try again.');
+    }
   };
 
   const filteredTeams = teams.filter(
