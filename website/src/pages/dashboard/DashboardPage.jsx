@@ -262,7 +262,7 @@ export default function DashboardPage({ onBack }) {
           xp: 320,
           level: 2,
         },
-      ].sort((a, b) => b.xp - a.xp)
+      ].sort((a, b) => b.xp - a.xp || a.username.localeCompare(b.username))
     );
   }, [currentUser]);
 
@@ -385,11 +385,19 @@ export default function DashboardPage({ onBack }) {
               border: '1px solid var(--b2)',
             }}
           >
-            <h3 style={{ marginBottom: '12px', color: 'var(--t1)', fontFamily: 'Orbitron, sans-serif' }}>
+            <h3
+              style={{
+                marginBottom: '12px',
+                color: 'var(--t1)',
+                fontFamily: 'Orbitron, sans-serif',
+              }}
+            >
               Theme Settings
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--t2)' }}>Choose your appearance preference:</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--t2)' }}>
+                Choose your appearance preference:
+              </span>
               <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                 <button
                   onClick={() => setTheme('light')}
@@ -406,10 +414,12 @@ export default function DashboardPage({ onBack }) {
                     fontWeight: currentTheme === 'light' ? '700' : '500',
                   }}
                   onMouseOver={(e) => {
-                    if (currentTheme !== 'light') e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                    if (currentTheme !== 'light')
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
                   }}
                   onMouseOut={(e) => {
-                    if (currentTheme !== 'light') e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                    if (currentTheme !== 'light')
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
                   }}
                 >
                   Light
@@ -429,10 +439,12 @@ export default function DashboardPage({ onBack }) {
                     fontWeight: currentTheme === 'dark' ? '700' : '500',
                   }}
                   onMouseOver={(e) => {
-                    if (currentTheme !== 'dark') e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                    if (currentTheme !== 'dark')
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
                   }}
                   onMouseOut={(e) => {
-                    if (currentTheme !== 'dark') e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                    if (currentTheme !== 'dark')
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
                   }}
                 >
                   Dark
@@ -452,10 +464,12 @@ export default function DashboardPage({ onBack }) {
                     fontWeight: currentTheme === 'system' ? '700' : '500',
                   }}
                   onMouseOver={(e) => {
-                    if (currentTheme !== 'system') e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                    if (currentTheme !== 'system')
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
                   }}
                   onMouseOut={(e) => {
-                    if (currentTheme !== 'system') e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                    if (currentTheme !== 'system')
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
                   }}
                 >
                   System
