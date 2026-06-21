@@ -1017,6 +1017,95 @@ async function fetchWithAuth(url, options = {}) {
           waitlist: [],
         });
       }
+
+      // /api/admin/reports/engagement
+      else if (url.startsWith('/api/admin/reports/engagement')) {
+        const seedUsers = Array.from({ length: 45 }, (_, i) => {
+          const eventsAttended = Math.floor(Math.random() * 15);
+          const portfolioCompletion = Math.floor(Math.random() * 101);
+          const activeDays30 = Math.floor(Math.random() * 31);
+          const activeDays90 = Math.floor(Math.random() * 91);
+          const score30 = Math.min((activeDays30 / 30) * 40, 40);
+          const scoreEvents = Math.min((eventsAttended / 10) * 30, 30);
+          const scorePortfolio = (portfolioCompletion / 100) * 30;
+          const engagementScore = Math.round(score30 + scoreEvents + scorePortfolio);
+          const isInactive = activeDays30 < 2 && eventsAttended === 0;
+
+          return {
+            id: `user-${i + 1}`,
+            name: `Community Member ${i + 1}`,
+            eventsAttended,
+            portfolioCompletion,
+            activeDays30,
+            activeDays90,
+            engagementScore,
+            status: isInactive ? 'Inactive' : 'Active',
+          };
+        });
+        seedUsers.sort((a, b) => b.engagementScore - a.engagementScore);
+        resolve({ users: seedUsers });
+      }
+
+      // /api/admin/reports/revenue
+      else if (url.startsWith('/api/admin/reports/revenue')) {
+        const today = new Date();
+        const trend = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date(today);
+          date.setDate(today.getDate() - (6 - i));
+          const dateStr = date.toISOString().split('T')[0];
+          const dailyRevs = [1200, 1800, 2400, 1500, 2100, 3100, 3300];
+          return {
+            date: dateStr,
+            revenue: dailyRevs[i],
+          };
+        });
+
+        resolve({
+          stats: {
+            totalRevenue: 15400,
+            totalRefunded: 600,
+            totalTax: 1240,
+            netRevenue: 14800,
+          },
+          revenueByEvent: [
+            { eventName: 'Web Dev Boot Camp 2026', revenue: 8000 },
+            { eventName: 'AI Summit 2026', revenue: 5000 },
+            { eventName: 'Workshop: Git & GitHub', revenue: 2400 },
+            { eventName: 'KSS #153 — Knowledge Sharing Session', revenue: 0 },
+          ],
+          paymentMethodBreakdown: [
+            { method: 'UPI', amount: 6200, percentage: 40 },
+            { method: 'CARD', amount: 5400, percentage: 35 },
+            { method: 'PAYPAL', amount: 3100, percentage: 20 },
+            { method: 'CASH', amount: 700, percentage: 5 },
+          ],
+          refunds: [
+            {
+              id: 'ref_1',
+              eventName: 'Web Dev Boot Camp 2026',
+              source: 'Ticket Refund',
+              amount: 200,
+              refundAmount: 200,
+              receivedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+            },
+            {
+              id: 'ref_2',
+              eventName: 'AI Summit 2026',
+              source: 'Ticket Refund',
+              amount: 400,
+              refundAmount: 400,
+              receivedAt: new Date(Date.now() - 86400000 * 4).toISOString(),
+            },
+          ],
+          revenueTrend: trend,
+          taxSummary: {
+            totalBeforeTax: 14160,
+            totalTax: 1240,
+            totalRevenue: 15400,
+          },
+        });
+      }
+    }
     }, 300); // simulate slight network delay
   });
 }
@@ -1578,6 +1667,11 @@ export const api = {
       return result;
     },
     getBillingHistory: (userId) => fetchWithAuth(`/api/admin/subscriptions/${userId}/billing`),
+  },
+
+  reports: {
+    getEngagement: () => fetchWithAuth('/api/admin/reports/engagement'),
+    getRevenue: () => fetchWithAuth('/api/admin/reports/revenue'),
   },
 };
 

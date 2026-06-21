@@ -65,7 +65,9 @@ import { coreTeamService } from './services/coreTeamService.js';
 import { HAS_SUPABASE } from './storage/supabaseClient.js';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
-import RedisStore from 'connect-redis';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const RedisStore = require('connect-redis').default || require('connect-redis');
 import Redis from 'ioredis';
 import passport from './config/studentOAuth.js';
 import { studentUsersRepository } from './repositories/studentUsersRepository.js';
@@ -542,7 +544,6 @@ function withContentLock(fn) {
   return current.then(() => fn()).finally(() => release());
 }
 
-export async function supabaseRequest(pathname, { method = 'GET', body } = {}) {
 const _rawSupabaseRequest = async function _rawSupabaseRequest(
   pathname,
   { method = 'GET', body } = {}

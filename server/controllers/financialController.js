@@ -163,3 +163,8 @@ export const exportReport = wrapAsync(async (req, res) => {
 
   return res.status(200).json(JSON.parse(result));
 });
+
+export const getRevenueReport = wrapAsync(async (req, res) => {
+  const report = await financialService.getRevenueReport(req.studentUser);
+  return res.status(200).json(report);
+});

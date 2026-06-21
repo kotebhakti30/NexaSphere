@@ -50,6 +50,10 @@ function mapRevenueRow(row) {
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    paymentMethod: row.payment_method,
+    isRefunded: row.is_refunded,
+    refundAmount: Number(row.refund_amount || 0),
+    taxAmount: Number(row.tax_amount || 0),
   };
 }
 
@@ -215,8 +219,8 @@ export const financialRepository = {
   async createRevenue(revenue) {
     return withDb(async (client) => {
       const { rows } = await client.query(
-        `INSERT INTO revenue_entries (budget_id, event_id, source, amount, description, received_at, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `INSERT INTO revenue_entries (budget_id, event_id, source, amount, description, received_at, created_by, payment_method, is_refunded, refund_amount, tax_amount)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING *`,
         [
           revenue.budgetId || null,
@@ -226,6 +230,10 @@ export const financialRepository = {
           revenue.description || null,
           revenue.receivedAt || new Date(),
           revenue.createdBy,
+          revenue.paymentMethod || 'card',
+          revenue.isRefunded !== undefined ? revenue.isRefunded : false,
+          revenue.refundAmount || 0,
+          revenue.taxAmount || 0,
         ]
       );
       return mapRevenueRow(rows[0]);
@@ -245,6 +253,15 @@ export const financialRepository = {
       const { rows } = await client.query(
         'SELECT * FROM revenue_entries WHERE budget_id = $1 ORDER BY received_at DESC',
         [budgetId]
+      );
+      return rows.map(mapRevenueRow);
+    });
+  },
+
+  async getAllRevenues() {
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        'SELECT * FROM revenue_entries ORDER BY received_at DESC'
       );
       return rows.map(mapRevenueRow);
     });
@@ -284,6 +301,17 @@ export const financialRepository = {
       query += ' ORDER BY created_at DESC';
       const { rows } = await client.query(query, params);
       return rows.map(mapAuditRow);
+    });
+  },
+
+  async getEventMap() {
+    return withDb(async (client) => {
+      const { rows } = await client.query('SELECT id, name FROM events');
+      const map = {};
+      rows.forEach((r) => {
+        map[r.id] = r.name;
+      });
+      return map;
     });
   },
 };

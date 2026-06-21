@@ -13,6 +13,9 @@ export class FinancialService {
     }
 
     if (role === 'organizer') {
+      if (action === 'view_revenue_report') {
+        throw new Error('Forbidden: Insufficient permissions');
+      }
       if (!resource) {
         return true;
       }
@@ -308,6 +311,14 @@ export class FinancialService {
     const totalActual = comparisons.reduce((sum, c) => sum + c.actual, 0);
     const totalVariance = totalBudgeted - totalActual;
 
+    const utilization = totalBudgeted > 0 ? (totalActual / totalBudgeted) : 0;
+    let alert = null;
+    if (utilization >= 0.9) {
+      alert = { alertLevel: '90%' };
+    } else if (utilization >= 0.8) {
+      alert = { alertLevel: '80%' };
+    }
+
     return {
       budgetId,
       budgetName: budget.name,
@@ -315,6 +326,61 @@ export class FinancialService {
       totalActual,
       totalVariance,
       comparisons,
+      alert,
+    };
+  }
+
+  async getCashFlowStatement(budgetId, user) {
+    const budget = await this.getBudgetById(budgetId, user);
+    const revenues = await financialRepository.getRevenuesByBudgetId(budgetId);
+    const expenses = await financialRepository.getExpensesByBudgetId(budgetId);
+
+    const approvedExpenses = expenses.filter(
+      (e) => e.status === 'approved' || e.status === 'reimbursed'
+    );
+
+    const flows = [];
+
+    revenues.forEach((r) => {
+      flows.push({
+        type: 'inflow',
+        source: r.source,
+        amount: r.amount,
+        date: r.receivedAt,
+      });
+    });
+
+    approvedExpenses.forEach((e) => {
+      flows.push({
+        type: 'outflow',
+        source: e.name,
+        amount: e.amount,
+        date: e.createdAt,
+      });
+    });
+
+    // Sort flows by date ascending
+    flows.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Calculate running balance
+    let runningBalance = 0;
+    const flowsWithBalance = flows.map((f) => {
+      if (f.type === 'inflow') {
+        runningBalance += f.amount;
+      } else {
+        runningBalance -= f.amount;
+      }
+      return {
+        ...f,
+        balance: runningBalance,
+      };
+    });
+
+    return {
+      budgetId,
+      budgetName: budget.name,
+      finalBalance: runningBalance,
+      flows: flowsWithBalance,
     };
   }
 
@@ -386,6 +452,90 @@ export class FinancialService {
     }
 
     throw new Error(`Unsupported export format: ${format}`);
+  }
+
+  async getRevenueReport(user) {
+    this.checkAccess(user, 'view_revenue_report');
+
+    const revenues = await financialRepository.getAllRevenues();
+    const eventMap = await financialRepository.getEventMap();
+
+    // Total revenue by event
+    const revenueByEventMap = {};
+    revenues.forEach((r) => {
+      if (r.isRefunded) return;
+      const eventName = eventMap[r.eventId] || r.eventId || 'General / Non-Event';
+      revenueByEventMap[eventName] = (revenueByEventMap[eventName] || 0) + r.amount;
+    });
+    const revenueByEvent = Object.keys(revenueByEventMap).map((name) => ({
+      eventName: name,
+      revenue: revenueByEventMap[name],
+    }));
+
+    // Payment method breakdown
+    const paymentBreakdownMap = {};
+    let totalPaidCount = 0;
+    revenues.forEach((r) => {
+      if (r.isRefunded) return;
+      const method = r.paymentMethod || 'card';
+      paymentBreakdownMap[method] = (paymentBreakdownMap[method] || 0) + r.amount;
+      totalPaidCount++;
+    });
+    const paymentMethodBreakdown = Object.keys(paymentBreakdownMap).map((method) => ({
+      method: method.toUpperCase(),
+      amount: paymentBreakdownMap[method],
+      percentage: totalPaidCount > 0 ? Math.round((paymentBreakdownMap[method] / revenues.reduce((sum, rev) => sum + (rev.isRefunded ? 0 : rev.amount), 0)) * 100) : 0,
+    }));
+
+    // Refund tracking
+    const refunds = revenues
+      .filter((r) => r.isRefunded || r.refundAmount > 0)
+      .map((r) => ({
+        id: r.id,
+        eventName: eventMap[r.eventId] || r.eventId || 'General / Non-Event',
+        source: r.source,
+        amount: r.amount,
+        refundAmount: r.refundAmount || r.amount,
+        receivedAt: r.receivedAt,
+      }));
+    const totalRefunded = refunds.reduce((sum, r) => sum + r.refundAmount, 0);
+
+    // Revenue by date trend
+    const dailyRevenueMap = {};
+    revenues.forEach((r) => {
+      if (r.isRefunded) return;
+      const dateStr = new Date(r.receivedAt).toISOString().split('T')[0];
+      dailyRevenueMap[dateStr] = (dailyRevenueMap[dateStr] || 0) + r.amount;
+    });
+    const revenueTrend = Object.keys(dailyRevenueMap)
+      .sort()
+      .map((date) => ({
+        date,
+        revenue: dailyRevenueMap[date],
+      }));
+
+    // Tax summary
+    const totalTax = revenues.reduce((sum, r) => sum + (r.isRefunded ? 0 : r.taxAmount), 0);
+    const totalBeforeTax = revenues.reduce((sum, r) => sum + (r.isRefunded ? 0 : (r.amount - r.taxAmount)), 0);
+    const totalRevenue = revenues.reduce((sum, r) => sum + (r.isRefunded ? 0 : r.amount), 0);
+
+    return {
+      stats: {
+        totalRevenue,
+        totalRefunded,
+        totalTax,
+        netRevenue: totalRevenue - totalRefunded,
+      },
+      revenueByEvent,
+      paymentMethodBreakdown,
+      refunds,
+      revenueTrend,
+      taxSummary: {
+        totalBeforeTax,
+        totalTax,
+        totalRevenue,
+      },
+    };
   }
 }
 

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { portfolioExportService } from '../services/portfolioExportService.js';
 import { portfolioRepository } from '../repositories/portfolioRepository.js';
-import { auth } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 
 const router = Router();

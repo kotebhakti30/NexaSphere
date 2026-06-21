@@ -31,5 +31,6 @@ router.get('/budgets/:id/variance', financialController.getBudgetVariance);
 router.get('/budgets/:id/income-statement', financialController.getIncomeStatement);
 router.get('/budgets-utilization', financialController.getBudgetsUtilizationReport);
 router.get('/budgets/:id/export', financialController.exportReport);
+router.get('/reports/revenue', financialController.getRevenueReport);
 
 export default router;

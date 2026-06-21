@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
  * Invokes Gemini AI to get matched project recommendations based on the resume text and current project list.
@@ -12,7 +12,7 @@ export async function getRecommendationsFromGemini(resumeText, projects) {
     throw new Error('GEMINI_API_KEY environment variable is not configured.');
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenerativeAI(apiKey);
   const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `

@@ -5,6 +5,7 @@
 import { tracedFetch } from '../config/appContext.js';
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
+import { financialService } from '../services/financialService.js';
 import {
   validateConfigChange,
   createChangeHistory,
@@ -24,12 +25,6 @@ import {
   getReadOnlyStatus,
   createIncidentLog,
 } from '../routes/readOnlyMode.js';
-import {
-  activateReadOnlyMode as activateReadOnlyMode2,
-  deactivateReadOnlyMode as deactivateReadOnlyMode2,
-  getReadOnlyStatus as getReadOnlyStatus2,
-  createIncidentLog as createIncidentLog2,
-} from '../utils/readOnlyMode.js';
 import {
   getServiceStatus,
   getIncidentTimeline,
@@ -225,6 +220,44 @@ router.get('/api/admin/security-analytics', adminAuth, async (req, res) => {
     riskScores,
     suspiciousRequests,
   });
+});
+
+router.get('/api/admin/reports/engagement', adminAuth, async (req, res) => {
+  // Generate simulated user engagement stats
+  const seedUsers = Array.from({ length: 45 }, (_, i) => {
+    const eventsAttended = Math.floor(Math.random() * 15);
+    const portfolioCompletion = Math.floor(Math.random() * 101);
+    const activeDays30 = Math.floor(Math.random() * 31);
+    const activeDays90 = Math.floor(Math.random() * 91);
+    const score30 = Math.min((activeDays30 / 30) * 40, 40);
+    const scoreEvents = Math.min((eventsAttended / 10) * 30, 30);
+    const scorePortfolio = (portfolioCompletion / 100) * 30;
+    const engagementScore = Math.round(score30 + scoreEvents + scorePortfolio);
+    const isInactive = activeDays30 < 2 && eventsAttended === 0;
+
+    return {
+      id: `user-${i + 1}`,
+      name: `Community Member ${i + 1}`,
+      eventsAttended,
+      portfolioCompletion,
+      activeDays30,
+      activeDays90,
+      engagementScore,
+      status: isInactive ? 'Inactive' : 'Active',
+    };
+  });
+  seedUsers.sort((a, b) => b.engagementScore - a.engagementScore);
+  res.json({ users: seedUsers });
+});
+
+router.get('/api/admin/reports/revenue', adminAuth, async (req, res) => {
+  try {
+    const user = { id: req.adminSession.username, role: 'admin' };
+    const report = await financialService.getRevenueReport(user);
+    res.json(report);
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Failed to generate revenue report' });
+  }
 });
 
 export default router;
