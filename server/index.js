@@ -1572,23 +1572,37 @@ app.patch('/api/admin/forum/threads/:id/moderate', adminAuth, forumController.mo
 app.patch('/api/admin/forum/replies/:replyId/moderate', adminAuth, forumController.moderateReply);
 app.get('/api/admin/forum/threads', adminAuth, forumController.adminListThreads);
 
+function requireMentorshipAuth(req, res, next) {
+  adminAuthMiddleware.requireAdmin(req, res, (err) => {
+    if (!err && req.adminSession) {
+      return next();
+    }
+    requireStudentAuth(req, res, (err2) => {
+      if (!err2 && req.studentUser) {
+        return next();
+      }
+      return res.status(401).json({ error: 'Unauthorized: Authentication required' });
+    });
+  });
+}
+
 // ── Mentorship & Buddy System ──
 app.get('/api/mentorship/mentors', mentorshipController.listMentors);
 app.get('/api/mentorship/mentors/:id', mentorshipController.getMentor);
-app.post('/api/mentorship/mentors', mentorshipController.registerMentor);
-app.put('/api/mentorship/mentors/:id', adminAuth, mentorshipController.updateMentor);
-app.post('/api/mentorship/requests', mentorshipController.requestMentorship);
-app.get('/api/mentorship/requests', mentorshipController.listMentorships);
-app.get('/api/mentorship/requests/:id', mentorshipController.getMentorship);
+app.post('/api/mentorship/mentors', requireStudentAuth, mentorshipController.registerMentor);
+app.put('/api/mentorship/mentors/:id', requireMentorshipAuth, mentorshipController.updateMentor);
+app.post('/api/mentorship/requests', requireStudentAuth, mentorshipController.requestMentorship);
+app.get('/api/mentorship/requests', requireMentorshipAuth, mentorshipController.listMentorships);
+app.get('/api/mentorship/requests/:id', requireMentorshipAuth, mentorshipController.getMentorship);
 app.put(
   '/api/mentorship/requests/:id/status',
-  adminAuth,
+  requireMentorshipAuth,
   mentorshipController.updateMentorshipStatus
 );
-app.post('/api/mentorship/requests/:id/sessions', mentorshipController.logSession);
-app.get('/api/mentorship/requests/:id/sessions', mentorshipController.listSessions);
-app.post('/api/mentorship/buddy-pairs', mentorshipController.createBuddyPair);
-app.get('/api/mentorship/buddy-pairs', mentorshipController.listBuddyPairs);
+app.post('/api/mentorship/requests/:id/sessions', requireStudentAuth, mentorshipController.logSession);
+app.get('/api/mentorship/requests/:id/sessions', requireStudentAuth, mentorshipController.listSessions);
+app.post('/api/mentorship/buddy-pairs', requireStudentAuth, mentorshipController.createBuddyPair);
+app.get('/api/mentorship/buddy-pairs', requireStudentAuth, mentorshipController.listBuddyPairs);
 app.get('/api/admin/mentorships', adminAuth, mentorshipController.adminListAll);
 app.get('/api/admin/mentors', adminAuth, mentorshipController.adminListMentors);
 
