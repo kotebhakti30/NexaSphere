@@ -33,6 +33,12 @@ export default function ExplorePage({ onBack, eventsData }) {
   const [activeTab, setActiveTab] = useState('discover');
 
   useEffect(() => {
+    // apiClient creates its own internal AbortController per call (for its
+    // request timeout) and does not currently accept an external signal, so
+    // in-flight requests here cannot be cancelled directly. Guard against
+    // state updates firing after unmount with an `alive` flag instead,
+    // consistent with the pattern already used in TeamPage.jsx.
+    let alive = true;
     const fetchData = async () => {
       const base = getApiBase();
       setLoading(true);
@@ -43,18 +49,23 @@ export default function ExplorePage({ onBack, eventsData }) {
           base ? apiClient(`${base}/api/content/team`).catch(() => null) : null,
         ]);
 
+        if (!alive) return;
         if (trendingRes?.trending) setTrending(trendingRes.trending);
         if (recsRes?.recommendations) setRecommendations(recsRes.recommendations);
         if (teamRes?.members) setMembers(teamRes.members);
       } catch (err) {
+        if (!alive) return;
         if (import.meta.env.DEV) {
           console.warn('[ExplorePage] Failed to fetch explore data:', err.message);
         }
         setFetchError('Failed to load content. Please try again.');
       }
-      setLoading(false);
+      if (alive) setLoading(false);
     };
     fetchData();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const filteredEvents = useMemo(() => {
