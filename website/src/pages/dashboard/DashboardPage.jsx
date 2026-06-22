@@ -5,6 +5,7 @@ import Leaderboard from '../../components/dashboard/Leaderboard';
 import AiMentor from '../../components/dashboard/AiMentor';
 import { buildUrl, getAiApiBase, getApiBase } from '../../utils/runtimeConfig';
 import { useTheme } from '../../hooks/useTheme';
+import { useStudentAuth } from '../../context/StudentAuthContext';
 
 function DashboardCardSkeleton({ count = 3 }) {
   return (
