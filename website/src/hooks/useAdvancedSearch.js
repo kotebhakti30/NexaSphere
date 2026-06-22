@@ -11,9 +11,17 @@ export const useAdvancedSearch = () => {
   const [facets, setFacets] = useState({});
   const [activeFilters, setActiveFilters] = useState({});
   const [suggestions, setSuggestions] = useState([]);
-  const [recentSearches, setRecentSearches] = useState(
-    JSON.parse(localStorage.getItem('recent_searches') || '[]')
-  );
+  
+  // Safe lazy initializer protecting against malformed JSON crashes
+  const [recentSearches, setRecentSearches] = useState(() => {
+    try {
+      const storedData = localStorage.getItem('recent_searches');
+      return storedData ? JSON.parse(storedData) : [];
+    } catch (err) {
+      console.error('Failed to parse malformed JSON payload from recent_searches storage stream:', err);
+      return [];
+    }
+  });
 
   const fetchResults = useCallback(
     debounce(async (searchQuery, filters) => {
@@ -55,10 +63,22 @@ export const useAdvancedSearch = () => {
     fetchResults(query, activeFilters);
   }, [query, activeFilters, fetchResults]);
 
+  // Combined tracking tracking mechanism with functional updates and protection
   const updateRecentSearches = (q) => {
-    const updated = [q, ...recentSearches.filter((item) => item !== q)].slice(0, 5);
-    setRecentSearches(updated);
-    localStorage.setItem('recent_searches', JSON.stringify(updated));
+    if (!q || q.trim() === '') return;
+
+    setRecentSearches((prev) => {
+      const filtered = prev.filter((item) => item !== q);
+      const updated = [q, ...filtered].slice(0, 5); // Kept the incoming 5-item clamp limit
+      
+      try {
+        localStorage.setItem('recent_searches', JSON.stringify(updated));
+      } catch (err) {
+        console.error('Failed to commit search telemetry update back to local disk storage:', err);
+      }
+      
+      return updated;
+    });
   };
 
   const toggleFilter = (category, value) => {
@@ -74,10 +94,25 @@ export const useAdvancedSearch = () => {
 
   const clearFilters = () => setActiveFilters({});
 
+  // Error safety expanded to include saved_searches parser
   const saveSearch = () => {
-    const saved = JSON.parse(localStorage.getItem('saved_searches') || '[]');
+    let saved = [];
+    try {
+      const storedSaved = localStorage.getItem('saved_searches');
+      saved = storedSaved ? JSON.parse(storedSaved) : [];
+    } catch (err) {
+      console.error('Failed to parse saved searches payload:', err);
+      saved = [];
+    }
+
     const newSave = { query, filters: activeFilters, timestamp: Date.now() };
-    localStorage.setItem('saved_searches', JSON.stringify([...saved, newSave]));
+    const updatedSaved = [...saved, newSave];
+
+    try {
+      localStorage.setItem('saved_searches', JSON.stringify(updatedSaved));
+    } catch (err) {
+      console.error('Failed to save search settings payload profile:', err);
+    }
   };
 
   return {
@@ -94,3 +129,5 @@ export const useAdvancedSearch = () => {
     saveSearch,
   };
 };
+
+export default useAdvancedSearch;
