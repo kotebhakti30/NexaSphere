@@ -52,7 +52,7 @@ export const apiRateLimiter = rateLimit({
   windowMs: API_WINDOW_MS,
   max: API_MAX_REQUESTS,
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: true,
   store: createRateLimitStore('rate-limit:api:'),
   handler: (req, res, _next, options) => {
     logger.warn('Global API rate limit exceeded', {
@@ -96,7 +96,7 @@ export const formRateLimiter = rateLimit({
   windowMs: FORM_WINDOW_MS,
   max: FORM_MAX_REQUESTS,
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: true,
   store: createRateLimitStore('rate-limit:form:'),
   handler: (req, res, _next, options) => {
     logger.warn('Rate limit exceeded for public form API', {
@@ -117,7 +117,7 @@ export const authRateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: true,
   handler: createLimiterHandler(
     "Authentication rate limit exceeded",
     "Too many login attempts, please try again after a minute."
@@ -129,7 +129,7 @@ export const notificationRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 60,
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: true,
   handler: createLimiterHandler(
     "Notification mutation rate limit exceeded",
     "Too many notification requests, please try again later."
@@ -145,7 +145,7 @@ export const activityAuthRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: true,
   store: createRateLimitStore('rate-limit:activity-auth:'),
   handler: (req, res, next, options) => {
     logger.warn('Activity-event auth rate limit exceeded', {
@@ -166,7 +166,7 @@ export const syncRateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: true,
   store: createRateLimitStore('rate-limit:sync:'),
   handler: (req, res, next, options) => {
     logger.warn('Sync batch rate limit exceeded', {
@@ -185,7 +185,7 @@ export const portfolioRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: true,
   handler: createLimiterHandler(
     "Portfolio update rate limit exceeded",
     "Too many portfolio update attempts from this IP, please try again after 15 minutes."
@@ -197,7 +197,7 @@ export const eventRegistrationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: true,
   store: createRateLimitStore('rate-limit:event-reg:'),
   handler: (req, res, _next, options) => {
     logger.warn('Event registration rate limit exceeded', {
@@ -216,7 +216,7 @@ export const searchRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 30, // 30 requests per minute
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: true,
   store: createRateLimitStore('rate-limit:search:'),
   handler: (req, res, next, options) => {
     logger.warn('Search rate limit exceeded', {
