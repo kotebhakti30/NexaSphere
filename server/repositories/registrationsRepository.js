@@ -182,4 +182,61 @@ export const registrationsRepository = {
       return rows;
     });
   },
+  async getPosition(eventId, email) {
+    if (!HAS_SUPABASE) return null;
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        `SELECT position FROM (
+           SELECT id, ROW_NUMBER() OVER (ORDER BY created_at ASC) AS position
+           FROM event_registrations
+           WHERE event_id = $1 AND waitlist = true AND status = 'waitlisted'
+         ) ranked
+         WHERE id = (
+           SELECT id FROM event_registrations
+           WHERE event_id = $1 AND email = $2 AND waitlist = true AND status = 'waitlisted'
+           LIMIT 1
+         )`,
+        [eventId, email]
+      );
+      return rows[0]?.position ? Number(rows[0].position) : null;
+    });
+  },
+
+  async getWaitlistCount(eventId) {
+    if (!HAS_SUPABASE) return 0;
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        `SELECT COUNT(*) AS count FROM event_registrations
+         WHERE event_id = $1 AND waitlist = true AND status = 'waitlisted'`,
+        [eventId]
+      );
+      return Number(rows[0]?.count || 0);
+    });
+  },
+
+  async removeFromWaitlist(eventId, email) {
+    if (!HAS_SUPABASE) return null;
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        `UPDATE event_registrations SET status = 'cancelled'
+         WHERE event_id = $1 AND email = $2 AND waitlist = true AND status = 'waitlisted'
+         RETURNING *`,
+        [eventId, email]
+      );
+      return rows[0] || null;
+    });
+  },
+
+  async cancelConfirmedRegistration(eventId, email) {
+    if (!HAS_SUPABASE) return null;
+    return withDb(async (client) => {
+      const { rows } = await client.query(
+        `UPDATE event_registrations SET status = 'cancelled'
+         WHERE event_id = $1 AND email = $2 AND status = 'confirmed'
+         RETURNING *`,
+        [eventId, email]
+      );
+      return rows[0] || null;
+    });
+  },
 };

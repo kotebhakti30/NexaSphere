@@ -33,11 +33,33 @@ const router = Router();
 // Public
 router.get('/api/dashboard/leaderboard', gamificationController.getLeaderboard);
 router.post('/api/dashboard/xp', gamificationController.awardXP);
-router.post('/api/assistant/recommend', upload.single('file'), recommendationsController.getProjectRecommendations);
+router.post(
+  '/api/assistant/recommend',
+  upload.single('file'),
+  recommendationsController.getProjectRecommendations
+);
 router.get('/api/users', usersController.getPublicUsers);
 router.get('/api/content/events', eventsController.listEvents);
-router.post('/api/content/events/:eventId/register', eventRegistrationLimiter, eventRegistrationController.registerForEvent);
+router.post(
+  '/api/content/events/:eventId/register',
+  eventRegistrationLimiter,
+  eventRegistrationController.registerForEvent
+);
 router.get('/api/content/events/:eventId/calendar', eventRegistrationController.getEventCalendar);
+router.post(
+  '/api/content/events/:eventId/cancel',
+  eventRegistrationLimiter,
+  eventRegistrationController.cancelRegistration
+);
+router.get(
+  '/api/content/events/:eventId/waitlist-position',
+  eventRegistrationController.getWaitlistPosition
+);
+router.delete(
+  '/api/content/events/:eventId/waitlist',
+  eventRegistrationLimiter,
+  eventRegistrationController.leaveWaitlist
+);
 router.get(
   '/api/content/activity-events/:activityKey',
   activityEventsController.listActivityEvents
