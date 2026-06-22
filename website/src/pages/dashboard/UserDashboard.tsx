@@ -156,12 +156,34 @@ export default function UserDashboard() {
       if (!r.ok) throw new Error(`Dashboard API error: ${r.status} ${r.statusText}`);
       return r.json();
     };
-    Promise.all([
-      fetch(`${base}/api/dashboard/profile/${userId}`).then(safeJson),
-      fetch(`${base}/api/dashboard/quests/${userId}`).then(safeJson),
-      fetch(`${base}/api/dashboard/leaderboard`).then(safeJson),
+    const controller = new AbortController();
+    Promise.allSettled([
+      fetch(`${base}/api/dashboard/profile/${userId}`, { signal: controller.signal }).then(
+        safeJson
+      ),
+      fetch(`${base}/api/dashboard/quests/${userId}`, { signal: controller.signal }).then(safeJson),
+      fetch(`${base}/api/dashboard/leaderboard`, { signal: controller.signal }).then(safeJson),
     ])
-      .then(([profile, quests, leaderboard]) => {
+      .then(([profileResult, questsResult, leaderboardResult]) => {
+        // Promise.allSettled means one failed endpoint no longer blanks the
+        // whole dashboard — each result is handled independently, falling
+        // back to mock data only for the piece that actually failed.
+        const profile = profileResult.status === 'fulfilled' ? profileResult.value : null;
+        const quests = questsResult.status === 'fulfilled' ? questsResult.value : null;
+        if (import.meta.env.DEV) {
+          if (profileResult.status === 'rejected') {
+            console.warn('[UserDashboard] Profile fetch failed:', profileResult.reason?.message);
+          }
+          if (questsResult.status === 'rejected') {
+            console.warn('[UserDashboard] Quests fetch failed:', questsResult.reason?.message);
+          }
+          if (leaderboardResult.status === 'rejected') {
+            console.warn(
+              '[UserDashboard] Leaderboard fetch failed:',
+              leaderboardResult.reason?.message
+            );
+          }
+        }
         // isDemo stays true — userId is still hardcoded as 'user_123'
 
         // Map profile → metrics
@@ -217,6 +239,7 @@ export default function UserDashboard() {
         setIsDemo(true);
       })
       .finally(() => setLoading(false));
+    return () => controller.abort();
   }, []);
 
   const weeklyData = [
