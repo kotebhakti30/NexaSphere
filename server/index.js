@@ -79,6 +79,7 @@ import { studentUsersRepository } from './repositories/studentUsersRepository.js
 import * as studentAuthController from './controllers/studentAuthController.js';
 import * as forumController from './controllers/forumController.js';
 import { requireStudentAuth } from './middleware/studentAuthMiddleware.js';
+import { studentAuthService } from './services/studentAuthService.js';
 import { loadPersistedPushSubscriptions } from './routes/notifications.js';
 import * as mentorshipController from './controllers/mentorshipController.js';
 import { xssSanitizer } from './middleware/xssSanitizer.js';
@@ -1417,8 +1418,26 @@ app.get('/api/notifications', async (req, res) => {
   }
 });
 
+function requireNotificationPrefAuth(req, res, next) {
+  adminAuthMiddleware.requireAdmin(req, res, (err) => {
+    if (!err && req.adminSession) {
+      return next();
+    }
+    requireStudentAuth(req, res, (err2) => {
+      if (err2 || !req.studentUser) {
+        return res.status(401).json({ error: 'Unauthorized: Authentication required' });
+      }
+      const userId = req.method === 'GET' ? (req.query.userId || 'global') : (req.body.userId || 'global');
+      if (req.studentUser.sub === userId || req.studentUser.id === userId) {
+        return next();
+      }
+      return res.status(403).json({ error: 'Forbidden: You cannot access or modify other users\' preferences' });
+    });
+  });
+}
+
 // Notification Preferences
-app.get('/api/notifications/preferences', async (req, res) => {
+app.get('/api/notifications/preferences', requireNotificationPrefAuth, async (req, res) => {
   try {
     const userId = req.query.userId || 'global';
     const prefs = await notificationPreferencesRepository.list(userId);
@@ -1428,7 +1447,7 @@ app.get('/api/notifications/preferences', async (req, res) => {
   }
 });
 
-app.put('/api/notifications/preferences', async (req, res) => {
+app.put('/api/notifications/preferences', requireNotificationPrefAuth, async (req, res) => {
   try {
     const userId = req.body.userId || 'global';
     const { category, email, push, in_app, sms, frequency, quiet_start, quiet_end, dnd } = req.body;
@@ -1449,7 +1468,7 @@ app.put('/api/notifications/preferences', async (req, res) => {
   }
 });
 
-app.put('/api/notifications/preferences/bulk', async (req, res) => {
+app.put('/api/notifications/preferences/bulk', requireNotificationPrefAuth, async (req, res) => {
   try {
     const userId = req.body.userId || 'global';
     const { preferences } = req.body;
