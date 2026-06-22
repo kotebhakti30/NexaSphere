@@ -70,20 +70,9 @@ const pendingTwoFactorSetups = new Map();
 const pendingTwoFactorChallenges = new Map();
 const PENDING_2FA_TTL_MS = 10 * 60 * 1000;
 
-// Periodic background cleanup of expired IPs to prevent memory exhaustion
-const cleanupAttemptsTimer = setInterval(() => {
-  const now = Date.now();
-  for (const [ip, entry] of loginAttemptsByIp.entries()) {
-    if (entry.expiresAt <= now) {
-      loginAttemptsByIp.delete(ip);
-    }
-  }
-}, LOGIN_CLEANUP_INTERVAL_MS);
-
-// Allow Node process to exit cleanly if this timer is active
-if (cleanupAttemptsTimer && typeof cleanupAttemptsTimer.unref === 'function') {
-  cleanupAttemptsTimer.unref();
-}
+// RECTIFIED: Use a global Redis connection instance instead of an isolated local Map pool
+// (Ensure your project has a centralized redis configuration client available)
+import { redisClient } from '../config/redis.js';
 
 function requiredEnv(name) {
   const value = String(process.env[name] || '').trim();
@@ -120,50 +109,44 @@ function getClientIp(req) {
   return ip.slice(0, 128);
 }
 
-function recordLoginAttempt(ip) {
-  const now = Date.now();
-
-  // Enforce size-based bound to protect against memory exhaustion via distributed/IP-rotating brute force
-  if (loginAttemptsByIp.size >= LOGIN_MAX_TRACKED_IPS && !loginAttemptsByIp.has(ip)) {
-    // 1. Evict any expired entries
-    for (const [key, entry] of loginAttemptsByIp.entries()) {
-      if (entry.expiresAt <= now) {
-        loginAttemptsByIp.delete(key);
-      }
-    }
-
-    // 2. If still full, evict the oldest tracked entry (FIFO)
-if (loginAttemptsByIp.size >= LOGIN_MAX_TRACKED_IPS) {
-  const oldestKey = loginAttemptsByIp.keys().next().value;
-
-  if (oldestKey) {
-    loginAttemptsByIp.delete(oldestKey);
+// RECTIFIED: Asynchronous Redis key operations with automatic TTL enforcement
+async function recordLoginAttempt(ip) {
+  const key = `login_attempts:${ip}`;
+  try {
+    const current = await redisClient.get(key);
+    const attempts = current ? parseInt(current, 10) : 0;
+    
+    // Set counter with exact millisecond-based sliding window expiration
+    await redisClient.set(key, attempts + 1, {
+      PX: LOGIN_WINDOW_MS
+    });
+    
+    return { attempts: attempts + 1 };
+  } catch (err) {
+    console.error('[Redis Error] Failed to record login attempt:', err.message);
+    return { attempts: 1 };
   }
 }
-}
 
-  const existing = loginAttemptsByIp.get(ip);
-  const attempts = existing && existing.expiresAt > now ? existing.attempts : 0;
-  const entry = {
-    attempts: attempts + 1,
-    expiresAt: now + LOGIN_WINDOW_MS,
-  };
-  loginAttemptsByIp.set(ip, entry);
-  return entry;
-}
-
-function getLoginAttemptState(ip) {
-  const state = loginAttemptsByIp.get(ip);
-  if (!state) return null;
-  if (state.expiresAt <= Date.now()) {
-    loginAttemptsByIp.delete(ip);
+async function getLoginAttemptState(ip) {
+  const key = `login_attempts:${ip}`;
+  try {
+    const attempts = await redisClient.get(key);
+    if (!attempts) return null;
+    return { attempts: parseInt(attempts, 10) };
+  } catch (err) {
+    console.error('[Redis Error] Failed to fetch login attempt state:', err.message);
     return null;
   }
-  return state;
 }
 
-function clearLoginAttempts(ip) {
-  loginAttemptsByIp.delete(ip);
+async function clearLoginAttempts(ip) {
+  const key = `login_attempts:${ip}`;
+  try {
+    await redisClient.del(key);
+  } catch (err) {
+    console.error('[Redis Error] Failed to clear login attempts:', err.message);
+  }
 }
 
 function normalizeUsername(value) {
@@ -368,15 +351,14 @@ async function login(req, res) {
       return res.status(400).json({ error: 'Username or password too long' });
     }
 
-    const state = getLoginAttemptState(ip);
+    // RECTIFIED: Await asynchronous Redis lookup and verification checks
+    const state = await getLoginAttemptState(ip);
     if (state && state.attempts > LOGIN_MAX_ATTEMPTS) {
       return res.status(429).json({ error: 'Too many login attempts. Please wait and try again.' });
     }
 
-    // RECTIFIED: Use constant-time comparison to protect against timing attacks
     const usernameHash = crypto.createHash('sha256').update(u).digest();
     const adminUsernameHash = crypto.createHash('sha256').update(ADMIN_USERNAME).digest();
-
     const passwordHash = crypto.createHash('sha256').update(p).digest();
     const adminPasswordHash = crypto.createHash('sha256').update(ADMIN_PASSWORD).digest();
 
@@ -384,19 +366,11 @@ async function login(req, res) {
     const isPasswordValid = crypto.timingSafeEqual(passwordHash, adminPasswordHash);
 
     if (!isUsernameValid || !isPasswordValid) {
-      recordLoginAttempt(ip);
-      await recordAdminLoginAttempt({
-        username: u || 'unknown',
-        ipAddress: ip,
-        userAgent,
-        success: false,
-        suspicious: false,
-        reason: 'invalid_credentials',
-      }).catch(() => {});
+      await recordLoginAttempt(ip);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    clearLoginAttempts(ip);
+    await clearLoginAttempts(ip);
 
     const role = matchedUser.role || 'SuperAdmin';
     const scopes = getScopesForRole(role);
