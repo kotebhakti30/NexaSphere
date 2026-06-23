@@ -87,7 +87,17 @@ const links = [
     requiredScope: 'events:read',
   },
   {
+<<<<<<< HEAD
     to: '/dashboard/tasks',
+=======
+    to: '/dashboard/audit-logs',
+    label: 'Audit Logs',
+    icon: 'FileText',
+    requiredScope: 'settings:admin',
+  },
+  {
+    to: '/dashboard/scheduled-tasks',
+>>>>>>> 4bee21df (feat(audit-log): add sidebar nav, route, and API wiring for audit log viewer)
     label: 'Scheduled Tasks',
     icon: 'Clock',
     requiredScope: 'settings:admin',
