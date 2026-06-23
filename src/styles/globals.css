@@ -46,6 +46,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 p  { line-height: 1.78; color: var(--t2); }
 a  { color: var(--c1); text-decoration: none; cursor: none; }
+[data-theme="high-contrast"] a { text-decoration: underline; text-decoration-color: var(--c1); text-underline-offset: 4px; }
 img, svg { display: block; max-width: 100%; }
 button { cursor: pointer; font-family: inherit; border: none; background: none; }
 button, a { touch-action: manipulation; -webkit-tap-highlight-color: transparent; cursor: pointer; }
