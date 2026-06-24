@@ -371,7 +371,6 @@ router.get(
     }
   }
 );
-<<<<<<< HEAD
 router.post('/api/admin/impersonate/stop', adminAuthMiddleware.requireAdmin, (req, res) => {
   impersonationService.stop(req.adminSession.token);
   return res.json({ impersonating: false });
@@ -380,7 +379,7 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   const active = impersonationService.getActive(req.adminSession.token);
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
-=======
+
 // Audit Log Viewer APIs
 router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
 
@@ -389,6 +388,5 @@ router.get(
   adminAuthMiddleware.requireAdmin,
   auditLogController.getStats
 );
->>>>>>> 4bee21df (feat(audit-log): add sidebar nav, route, and API wiring for audit log viewer)
 
 export default router;
