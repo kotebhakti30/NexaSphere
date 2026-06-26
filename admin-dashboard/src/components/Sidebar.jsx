@@ -87,7 +87,6 @@ const links = [
     requiredScope: 'events:read',
   },
   {
-<<<<<<< HEAD
     to: '/dashboard/tasks',
     label: 'Scheduled Tasks',
     icon: 'Clock',
@@ -97,23 +96,6 @@ const links = [
     to: '/dashboard/audit-logs',
     label: 'Audit Logs',
     icon: 'FileText',
-=======
-    to: '/dashboard/rate-limits',
-    label: 'Rate Limits',
-    icon: 'Shield',
-    requiredScope: 'settings:admin',
-  },
-  {
-    to: '/dashboard/audit-logs',
-    label: 'Audit Logs',
-    icon: 'FileText',
-    requiredScope: 'settings:admin',
-  },
-  {
-    to: '/dashboard/scheduled-tasks',
-    label: 'Scheduled Tasks',
-    icon: 'Clock',
->>>>>>> 1d1a6d1a (feat(rate-limit): wire throttle middleware, admin routes, and dashboard UI)
     requiredScope: 'settings:admin',
   },
   {

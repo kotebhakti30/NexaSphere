@@ -384,7 +384,6 @@ router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (r
   const active = impersonationService.getActive(req.adminSession.token);
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
 });
-<<<<<<< HEAD
 
 // Audit Log Viewer APIs
 router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
@@ -395,6 +394,4 @@ router.get(
   auditLogController.getStats
 );
 
-=======
->>>>>>> 1d1a6d1a (feat(rate-limit): wire throttle middleware, admin routes, and dashboard UI)
 export default router;
