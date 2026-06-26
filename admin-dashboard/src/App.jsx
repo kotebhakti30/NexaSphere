@@ -1,3 +1,4 @@
+import RateLimitMonitor from './pages/dashboard/RateLimitMonitor';
 import AuditLogViewer from './pages/dashboard/AuditLogViewer';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
@@ -89,13 +90,21 @@ export default function App() {
             <Route path="/dashboard/mentorship" element={<MentorshipManager />} />
             <Route path="/dashboard/streams" element={<StreamManager />} />
             <Route path="/dashboard/circuit-breaker" element={<CircuitBreakerManager />} />
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1d1a6d1a (feat(rate-limit): wire throttle middleware, admin routes, and dashboard UI)
             <Route path="/dashboard/waiting-room" element={<WaitingRoomManager />} />
             <Route path="/dashboard/groups" element={<UserGroups />} />
             <Route path="/dashboard/tasks" element={<ScheduledTasksManager />} />
             <Route path="/dashboard/backups" element={<BackupsManager />} />
             <Route path="/dashboard/sponsorships" element={<SponsorshipsManager />} />
             <Route path="/dashboard/audit-logs" element={<AuditLogViewer />} />
+<<<<<<< HEAD
             <Route path="/dashboard/reports" element={<UserEngagementReport />} />
+=======
+            <Route path="/dashboard/rate-limits" element={<RateLimitMonitor />} />
+>>>>>>> 1d1a6d1a (feat(rate-limit): wire throttle middleware, admin routes, and dashboard UI)
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
