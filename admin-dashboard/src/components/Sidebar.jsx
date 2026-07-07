@@ -99,15 +99,6 @@ const links = [
     requiredScope: 'events:read',
   },
   {
-    to: '/dashboard/tasks',
-    label: 'Scheduled Tasks',
-    icon: 'Clock',
-    requiredScope: 'settings:admin',
-  },
-  {
-    to: '/dashboard/audit-logs',
-    label: 'Audit Logs',
-    icon: 'FileText',
     to: '/dashboard/rate-limits',
     label: 'Rate Limits',
     icon: 'Shield',
