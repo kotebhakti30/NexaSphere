@@ -27,17 +27,22 @@ import * as subscriptionsController from '../controllers/subscriptionsController
 import * as portfolioAnalyticsController from '../controllers/portfolioAnalyticsController.js';
 import { achievementSchema } from '../validators/portfolioSchemas.js';
 import { auditLogRepository } from '../repositories/auditLogRepository.js';
-<<<<<<< HEAD
-import announcementPriorityRouter from "./announcementPriority.js";
-import eventConflictRouter from "./eventConflict.js";
-import waitlistRoutes from "./waitlist.js";
-=======
+import announcementPriorityRouter from './announcementPriority.js';
+import eventConflictRouter from './eventConflict.js';
+import waitlistRoutes from './waitlist.js';
 import * as localAuthController from '../controllers/localAuthController.js';
->>>>>>> upstream/main
-
 import * as recommendationsController from '../controllers/recommendationsController.js';
 import * as gamificationController from '../controllers/gamificationController.js';
 import multer from 'multer';
+
+// ⚠️ VERIFY THESE — best-guess paths based on naming conventions used elsewhere
+// in this file. Uncomment once you've confirmed the real file locations, then
+// delete this comment block.
+// import { impersonationService } from '../services/impersonationService.js';
+// import whiteboardController from '../controllers/whiteboardController.js';
+// import * as followsController from '../controllers/followsController.js';
+// import platformAnalyticsRoutes from './platformAnalytics.js';
+// import recommendationEngine from '../services/recommendationEngine.js';
 
 const router = Router();
 
@@ -190,10 +195,14 @@ router.post(
   adminAuthMiddleware.requireAdmin,
   adminAuthMiddleware.logoutOtherSessions
 );
-router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, async (req, res) => {
-  const logs = await auditLogRepository.searchAuditLogs(req.query);
-  return res.json({ logs });
-});
+
+// Audit Log Viewer APIs
+router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
+router.get(
+  '/api/admin/audit-logs/stats',
+  adminAuthMiddleware.requireAdmin,
+  auditLogController.getStats
+);
 router.get('/api/admin/audit-logs/export', adminAuthMiddleware.requireAdmin, async (req, res) => {
   const csv = await auditLogRepository.exportAuditLogsCsv(req.query);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -256,10 +265,22 @@ router.post(
 );
 
 // Banners Admin
-router.get('/api/admin/banners', adminAuthMiddleware.requireAdmin, bannersController.listAllBanners);
+router.get(
+  '/api/admin/banners',
+  adminAuthMiddleware.requireAdmin,
+  bannersController.listAllBanners
+);
 router.post('/api/admin/banners', adminAuthMiddleware.requireAdmin, bannersController.createBanner);
-router.put('/api/admin/banners/:id', adminAuthMiddleware.requireAdmin, bannersController.updateBanner);
-router.delete('/api/admin/banners/:id', adminAuthMiddleware.requireAdmin, bannersController.deleteBanner);
+router.put(
+  '/api/admin/banners/:id',
+  adminAuthMiddleware.requireAdmin,
+  bannersController.updateBanner
+);
+router.delete(
+  '/api/admin/banners/:id',
+  adminAuthMiddleware.requireAdmin,
+  bannersController.deleteBanner
+);
 
 router.post(
   '/api/admin/subscriptions/:userId/cancel',
@@ -312,21 +333,11 @@ router.delete(
 );
 
 // Portfolio Analytics APIs
-
 router.get(
   '/api/portfolio/:username/analytics',
   portfolioAnalyticsController.getPortfolioAnalytics
 );
-
-<<<<<<< HEAD
-router.post(
-  '/api/portfolio/:username/visit',
-  portfolioAnalyticsController.recordPortfolioVisit
-);
-=======
 router.post('/api/portfolio/:username/visit', portfolioAnalyticsController.recordPortfolioVisit);
->>>>>>> upstream/main
-
 router.get(
   '/api/portfolio/:username/monthly-report',
   portfolioAnalyticsController.getMonthlyReport
@@ -396,7 +407,6 @@ router.delete(
 );
 
 // Waiting room management API
-// Waiting room management API
 router.get(
   '/api/admin/events/:eventId/waiting-room',
   adminAuthMiddleware.requireScope('events:read'),
@@ -410,7 +420,9 @@ router.get(
     }
   }
 );
+
 router.use('/api/admin/settings', adminAuthMiddleware.requireAdmin, settingsRouter);
+
 router.post('/api/admin/impersonate/stop', adminAuthMiddleware.requireAdmin, (req, res) => {
   impersonationService.stop(req.adminSession.token);
   return res.json({ impersonating: false });
@@ -418,32 +430,12 @@ router.post('/api/admin/impersonate/stop', adminAuthMiddleware.requireAdmin, (re
 router.get('/api/admin/impersonate/status', adminAuthMiddleware.requireAdmin, (req, res) => {
   const active = impersonationService.getActive(req.adminSession.token);
   return res.json({ impersonating: !!active, user: active?.targetUser || null });
-<<<<<<< HEAD
 });
-router.use(
-"/api/announcements",
-announcementPriorityRouter
-);
 
-router.use("/api/events", eventConflictRouter);
-
-router.use(
-  "/api/admin/waitlist",
-  waitlistRoutes
-=======
-}); // Audit Log Viewer APIs
-router.get('/api/admin/audit-logs', adminAuthMiddleware.requireAdmin, auditLogController.listLogs);
-
-router.get(
-  '/api/admin/audit-logs/stats',
-  adminAuthMiddleware.requireAdmin,
-  auditLogController.getStats
->>>>>>> upstream/main
-);
-router.use(
-  "/recommendations",
-  recommendationEngine
-);
+router.use('/api/announcements', announcementPriorityRouter);
+router.use('/api/events', eventConflictRouter);
+router.use('/api/admin/waitlist', waitlistRoutes);
+router.use('/recommendations', recommendationEngine);
 
 // Follows/User Following System APIs
 // Follow/Unfollow operations
@@ -499,6 +491,6 @@ router.get(
 );
 
 // Platform Analytics APIs
-router.use("/api/analytics", platformAnalyticsRoutes);
+router.use('/api/analytics', platformAnalyticsRoutes);
 
 export default router;

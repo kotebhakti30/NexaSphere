@@ -16,11 +16,11 @@ import Redis from 'ioredis';
 import logger from '../utils/logger.js';
 
 // ── config ──────────────────────────────────────────────────────────────────
-const ABUSE_THRESHOLD   = 300;      // requests within the window that trigger auto-block
-const ABUSE_WINDOW_SEC  = 60;
-const AUTOBLOCK_TTL_SEC = 3600;     // 1 hour auto-block
-const DELAY_80_MS       = 100;
-const DELAY_90_MS       = 500;
+const ABUSE_THRESHOLD = 300; // requests within the window that trigger auto-block
+const ABUSE_WINDOW_SEC = 60;
+const AUTOBLOCK_TTL_SEC = 3600; // 1 hour auto-block
+const DELAY_80_MS = 100;
+const DELAY_90_MS = 500;
 
 // ── redis client (shared singleton) ─────────────────────────────────────────
 let redisClient = null;
@@ -28,13 +28,11 @@ let redisClient = null;
 async function getRedis() {
   if (redisClient) return redisClient;
   try {
-    if (process.env.REDIS_URL) {
-      redisClient = new Redis(process.env.REDIS_URL);
-    } else {
-      redisClient = new Redis();
-    }
-    redisClient.on('error', (err) => logger.warn('ThrottleMiddleware Redis error', { err: err.message }));
-  } catch (err) {
+    redisClient = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : new Redis();
+    redisClient.on('error', (err) =>
+      logger.warn('ThrottleMiddleware Redis error', { err: err.message })
+    );
+  } catch {
     logger.warn('ThrottleMiddleware: Redis unavailable, falling back to in-memory');
     redisClient = null;
   }
@@ -42,10 +40,10 @@ async function getRedis() {
 }
 
 // ── in-memory fallback stores ────────────────────────────────────────────────
-const memWhitelist  = new Set((process.env.RATE_LIMIT_WHITELIST || '').split(',').filter(Boolean));
-const memBlacklist  = new Set((process.env.RATE_LIMIT_BLACKLIST || '').split(',').filter(Boolean));
-const memAbuse      = new Map();   // ip → { count, resetAt }
-const memAutoblock  = new Map();   // ip → unblocksAt (ms)
+const memWhitelist = new Set((process.env.RATE_LIMIT_WHITELIST || '').split(',').filter(Boolean));
+const memBlacklist = new Set((process.env.RATE_LIMIT_BLACKLIST || '').split(',').filter(Boolean));
+const memAbuse = new Map(); // ip → { count, resetAt }
+const memAutoblock = new Map(); // ip → unblocksAt (ms)
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function delay(ms) {
@@ -53,11 +51,9 @@ function delay(ms) {
 }
 
 function clientIp(req) {
-  return (
-    (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
-    req.ip ||
-    'unknown'
-  );
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.ip || req.connection?.remoteAddress || '';
 }
 
 // ── whitelist / blacklist checks ─────────────────────────────────────────────
@@ -79,7 +75,10 @@ async function isAutoblocked(ip, redis) {
   }
   const entry = memAutoblock.get(ip);
   if (!entry) return false;
-  if (Date.now() > entry) { memAutoblock.delete(ip); return false; }
+  if (Date.now() > entry) {
+    memAutoblock.delete(ip);
+    return false;
+  }
   return true;
 }
 
@@ -104,6 +103,7 @@ async function recordAndCheckAbuse(ip, redis) {
   }
   entry.count++;
   memAbuse.set(ip, entry);
+
   if (entry.count > ABUSE_THRESHOLD) {
     memAutoblock.set(ip, now + AUTOBLOCK_TTL_SEC * 1000);
     logger.warn('ThrottleMiddleware: auto-blocked abusive IP (in-memory)', { ip });
@@ -123,26 +123,28 @@ async function recordAndCheckAbuse(ip, redis) {
  *   router.use(throttleMiddleware);
  */
 export async function throttleMiddleware(req, res, next) {
-  const ip    = clientIp(req);
+  const ip = clientIp(req);
   const redis = await getRedis();
 
   try {
     // 1. whitelist — skip all limits
-    if (await isWhitelisted(ip, redis)) return next();
+    if (await isWhitelisted(ip, redis)) {
+      return next();
+    }
 
     // 2. blacklist — hard block
     if (await isBlacklisted(ip, redis)) {
       return res.status(403).json({
-        error:   'Forbidden',
-        message: 'Your IP has been blocked. Contact support if you believe this is in error.',
+        error: 'Forbidden',
+        message: 'Your IP has been blocked.',
       });
     }
 
     // 3. auto-block check
     if (await isAutoblocked(ip, redis)) {
       return res.status(429).json({
-        error:       'Too Many Requests',
-        message:     'Automated abuse detected. Your IP is temporarily blocked.',
+        error: 'Too Many Requests',
+        message: 'Automated abuse detected. Your IP is temporarily blocked.',
         'retry-after': AUTOBLOCK_TTL_SEC,
       });
     }
@@ -151,18 +153,18 @@ export async function throttleMiddleware(req, res, next) {
     const justBlocked = await recordAndCheckAbuse(ip, redis);
     if (justBlocked) {
       return res.status(429).json({
-        error:       'Too Many Requests',
-        message:     'Abuse threshold exceeded. Your IP has been temporarily blocked for 1 hour.',
+        error: 'Too Many Requests',
+        message: 'Abuse threshold exceeded. Your IP has been temporarily blocked for 1 hour.',
         'retry-after': AUTOBLOCK_TTL_SEC,
       });
     }
 
-    // 5. throttle based on rate-limit headers set by upstream limiter
-    const limit     = parseInt(res.getHeader('X-RateLimit-Limit')     || '0', 10);
+    // 5. gradual slowdown based on upstream rate-limit headers
+    const limit = parseInt(res.getHeader('X-RateLimit-Limit') || '0', 10);
     const remaining = parseInt(res.getHeader('X-RateLimit-Remaining') || limit.toString(), 10);
 
     if (limit > 0) {
-      const used    = limit - remaining;
+      const used = limit - remaining;
       const pctUsed = used / limit;
 
       if (pctUsed >= 0.9) {

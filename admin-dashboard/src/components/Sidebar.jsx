@@ -108,6 +108,15 @@ const links = [
     to: '/dashboard/audit-logs',
     label: 'Audit Logs',
     icon: 'FileText',
+    to: '/dashboard/rate-limits',
+    label: 'Rate Limits',
+    icon: 'Shield',
+    requiredScope: 'settings:admin',
+  },
+  {
+    to: '/dashboard/audit-logs',
+    label: 'Audit Logs',
+    icon: 'FileText',
     requiredScope: 'settings:admin',
   },
   {

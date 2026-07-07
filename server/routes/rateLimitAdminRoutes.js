@@ -1,12 +1,12 @@
-/**
- * rateLimitAdminRoutes.js
- */
-
 import { Router } from 'express';
 import Redis from 'ioredis';
 import logger from '../utils/logger.js';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import rateLimit from 'express-rate-limit';
+import { Router } from 'express';
+import { createClient } from 'redis';
+import logger from '../utils/logger.js';
+import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware.js';
 import {
   addToWhitelist,
   removeFromWhitelist,
@@ -22,112 +22,108 @@ router.use(
   rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false })
 );
 
+// ── Redis client (reuse connection) ──────────────────────────────────────────
 let _redis = null;
 async function redis() {
   if (_redis) return _redis;
   try {
-    if (process.env.REDIS_URL) {
-      _redis = new Redis(process.env.REDIS_URL);
-    } else {
-      _redis = new Redis();
-    }
+    _redis = createClient({ url: process.env.REDIS_URL });
     _redis.on('error', () => {});
-  } catch (err) {
+    await _redis.connect();
+  } catch {
     _redis = null;
   }
   return _redis;
 }
 
+// ── helpers ───────────────────────────────────────────────────────────────────
 async function scanKeys(pattern) {
   const r = await redis();
   if (!r) return [];
-  return new Promise((resolve, reject) => {
-    const stream = r.scanStream({
-      match: pattern,
-      count: 200,
-    });
-    const keys = [];
-    stream.on('data', (resultKeys) => {
-      keys.push(...resultKeys);
-    });
-    stream.on('end', () => {
-      resolve(keys);
-    });
-    stream.on('error', (err) => {
-      reject(err);
-    });
-  });
+  const keys = [];
+  for await (const key of r.scanIterator({ MATCH: pattern, COUNT: 200 })) {
+    keys.push(key);
+  }
+  return keys;
 }
 
-router.get(
-  '/api/admin/rate-limits/status',
-  adminAuthMiddleware.requireAdmin,
+// ── GET /api/admin/rate-limits/status ─────────────────────────────────────────
+// Returns top rate-limited users/IPs and endpoint distribution.
+router.get('/api/admin/rate-limits/status', adminAuthMiddleware.requireAdmin, async (req, res) => {
+  try {
+    const r = await redis();
 
-  async (req, res) => {
-    try {
-      const r = await redis();
-      const keys = await scanKeys('ratelimit:*');
-      const violations = [];
-      const endpointCounts = {};
-      const userCounts = {};
+    // Collect all active rate-limit keys
+    const keys = await scanKeys('ratelimit:*');
 
-      for (const key of keys) {
-        if (
-          key.startsWith('ratelimit:whitelist') ||
-          key.startsWith('ratelimit:blacklist') ||
-          key.startsWith('ratelimit:autoblock') ||
-          key.startsWith('ratelimit:abuse')
-        )
-          continue;
+    const violations = [];
+    const endpointCounts = {};
+    const userCounts = {};
 
-        const count = r ? parseInt((await r.get(key)) || '0', 10) : 0;
-        const ttl = r ? await r.ttl(key) : -1;
-        const parts = key.replace('ratelimit:', '').split(':');
-        const identifier = parts[0];
-        const endpoint = parts.slice(1).join(':') || 'global';
+    for (const key of keys) {
+      // Skip internal keys
+      if (
+        key.startsWith('ratelimit:whitelist') ||
+        key.startsWith('ratelimit:blacklist') ||
+        key.startsWith('ratelimit:autoblock') ||
+        key.startsWith('ratelimit:abuse')
+      )
+        continue;
 
-        violations.push({ key, identifier, endpoint, count, ttlSeconds: ttl });
-        endpointCounts[endpoint] = (endpointCounts[endpoint] || 0) + count;
-        userCounts[identifier] = (userCounts[identifier] || 0) + count;
-      }
+      const count = r ? parseInt((await r.get(key)) || '0', 10) : 0;
+      const ttl = r ? await r.ttl(key) : -1;
 
-      const topUsers = Object.entries(userCounts)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 20)
-        .map(([identifier, count]) => ({ identifier, count }));
+      // Key format: ratelimit:<identifier>:<endpoint>
+      const parts = key.replace('ratelimit:', '').split(':');
+      const identifier = parts[0];
+      const endpoint = parts.slice(1).join(':') || 'global';
 
-      const topEndpoints = Object.entries(endpointCounts)
-        .sort(([, a], [, b]) => b - a)
-        .map(([endpoint, count]) => ({ endpoint, count }));
-
-      const blockedKeys = await scanKeys('ratelimit:autoblock:*');
-      const autoblocked = blockedKeys.map((k) => ({ ip: k.replace('ratelimit:autoblock:', '') }));
-
-      res.json({
-        totalActiveKeys: violations.length,
-        topUsers,
-        topEndpoints,
-        autoblocked,
-        redisConnected: !!r,
-      });
-    } catch (err) {
-      logger.error('rateLimitAdminRoutes /status error', { err: err.message });
-      res.status(500).json({ error: 'Failed to fetch rate limit status' });
+      violations.push({ key, identifier, endpoint, count, ttlSeconds: ttl });
+      endpointCounts[endpoint] = (endpointCounts[endpoint] || 0) + count;
+      userCounts[identifier] = (userCounts[identifier] || 0) + count;
     }
-  }
-);
 
+    // Top 20 by count
+    const topUsers = Object.entries(userCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 20)
+      .map(([identifier, count]) => ({ identifier, count }));
+
+    const topEndpoints = Object.entries(endpointCounts)
+      .sort(([, a], [, b]) => b - a)
+      .map(([endpoint, count]) => ({ endpoint, count }));
+
+    // Autoblocked IPs
+    const blockedKeys = await scanKeys('ratelimit:autoblock:*');
+    const autoblocked = blockedKeys.map((k) => ({
+      ip: k.replace('ratelimit:autoblock:', ''),
+    }));
+
+    res.json({
+      totalActiveKeys: violations.length,
+      topUsers,
+      topEndpoints,
+      autoblocked,
+      redisConnected: !!r,
+    });
+  } catch (err) {
+    logger.error('rateLimitAdminRoutes /status error', { err: err.message });
+    res.status(500).json({ error: 'Failed to fetch rate limit status' });
+  }
+});
+
+// ── GET /api/admin/rate-limits/violations ──────────────────────────────────────
+// Returns recent violations list (paginated).
 router.get(
   '/api/admin/rate-limits/violations',
   adminAuthMiddleware.requireAdmin,
-
   async (req, res) => {
     try {
       const { page = 1, limit = 50 } = req.query;
       const r = await redis();
       const keys = await scanKeys('ratelimit:*');
-      const rows = [];
 
+      const rows = [];
       for (const key of keys) {
         if (key.includes('whitelist') || key.includes('blacklist') || key.includes('autoblock'))
           continue;
@@ -146,6 +142,7 @@ router.get(
       rows.sort((a, b) => b.count - a.count);
       const start = (parseInt(page) - 1) * parseInt(limit);
       const paginated = rows.slice(start, start + parseInt(limit));
+
       res.json({ total: rows.length, page: parseInt(page), data: paginated });
     } catch (err) {
       logger.error('rateLimitAdminRoutes /violations error', { err: err.message });
@@ -154,18 +151,27 @@ router.get(
   }
 );
 
+// ── POST /api/admin/rate-limits/override ──────────────────────────────────────
+// Set a custom limit for a specific identifier (user ID or IP).
+// Body: { identifier, limitPerMinute }
 router.post(
   '/api/admin/rate-limits/override',
   adminAuthMiddleware.requireAdmin,
-
   async (req, res) => {
     try {
       const { identifier, limitPerMinute } = req.body;
-      if (!identifier || !limitPerMinute)
+      if (!identifier || !limitPerMinute) {
         return res.status(400).json({ error: 'identifier and limitPerMinute are required' });
+      }
 
       const r = await redis();
-      if (r) await r.set(`ratelimit:override:${identifier}`, String(limitPerMinute), 'EX', 86400);
+      if (r) {
+        await r.set(
+          `ratelimit:override:${identifier}`,
+          String(limitPerMinute),
+          { EX: 86400 } // override lasts 24 h, admin can re-set
+        );
+      }
 
       logger.info('Rate limit override set', {
         identifier,
@@ -180,14 +186,15 @@ router.post(
   }
 );
 
+// ── DELETE /api/admin/rate-limits/override/:identifier ────────────────────────
 router.delete(
   '/api/admin/rate-limits/override/:identifier',
   adminAuthMiddleware.requireAdmin,
-
   async (req, res) => {
     try {
+      const { identifier } = req.params;
       const r = await redis();
-      if (r) await r.del(`ratelimit:override:${req.params.identifier}`);
+      if (r) await r.del(`ratelimit:override:${identifier}`);
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: 'Failed to remove override' });
@@ -195,10 +202,10 @@ router.delete(
   }
 );
 
+// ── GET /api/admin/rate-limits/whitelist ──────────────────────────────────────
 router.get(
   '/api/admin/rate-limits/whitelist',
   adminAuthMiddleware.requireAdmin,
-
   async (req, res) => {
     try {
       res.json({ whitelist: await getWhitelist() });
@@ -208,10 +215,11 @@ router.get(
   }
 );
 
+// ── POST /api/admin/rate-limits/whitelist ─────────────────────────────────────
+// Body: { ip }
 router.post(
   '/api/admin/rate-limits/whitelist',
   adminAuthMiddleware.requireAdmin,
-
   async (req, res) => {
     try {
       const { ip } = req.body;
@@ -225,10 +233,10 @@ router.post(
   }
 );
 
+// ── DELETE /api/admin/rate-limits/whitelist/:ip ───────────────────────────────
 router.delete(
   '/api/admin/rate-limits/whitelist/:ip',
   adminAuthMiddleware.requireAdmin,
-
   async (req, res) => {
     try {
       await removeFromWhitelist(req.params.ip);
@@ -239,10 +247,10 @@ router.delete(
   }
 );
 
+// ── GET /api/admin/rate-limits/blacklist ──────────────────────────────────────
 router.get(
   '/api/admin/rate-limits/blacklist',
   adminAuthMiddleware.requireAdmin,
-
   async (req, res) => {
     try {
       res.json({ blacklist: await getBlacklist() });
@@ -252,10 +260,10 @@ router.get(
   }
 );
 
+// ── POST /api/admin/rate-limits/blacklist ─────────────────────────────────────
 router.post(
   '/api/admin/rate-limits/blacklist',
   adminAuthMiddleware.requireAdmin,
-
   async (req, res) => {
     try {
       const { ip } = req.body;
@@ -269,10 +277,10 @@ router.post(
   }
 );
 
+// ── DELETE /api/admin/rate-limits/blacklist/:ip ───────────────────────────────
 router.delete(
   '/api/admin/rate-limits/blacklist/:ip',
   adminAuthMiddleware.requireAdmin,
-
   async (req, res) => {
     try {
       await removeFromBlacklist(req.params.ip);
@@ -283,10 +291,11 @@ router.delete(
   }
 );
 
+// ── POST /api/admin/rate-limits/unblock ───────────────────────────────────────
+// Manually lift an auto-block. Body: { ip }
 router.post(
   '/api/admin/rate-limits/unblock',
   adminAuthMiddleware.requireAdmin,
-
   async (req, res) => {
     try {
       const { ip } = req.body;

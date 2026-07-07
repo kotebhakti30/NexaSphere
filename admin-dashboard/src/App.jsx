@@ -109,6 +109,7 @@ export default function App() {
             <Route path="/dashboard/reports" element={<UserEngagementReport />} />
             <Route path="/dashboard/scheduled-reports" element={<ScheduledReports />} />
             <Route path="/dashboard/sso-invites" element={<SsoInvitePage />} />
+            <Route path="/dashboard/rate-limits" element={<RateLimitMonitor />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
