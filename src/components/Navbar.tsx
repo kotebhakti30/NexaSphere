@@ -1,17 +1,13 @@
 'use client';
 
- fix/search-clear-button-1487
 import React, { useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Search, X } from 'lucide-react';
-
-import { useTranslations } from 'next-intl';
 import LanguageSwitcher from './LanguageSwitcher';
- main
 
 export const Navbar = () => {
   const t = useTranslations('General');
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -23,7 +19,6 @@ export const Navbar = () => {
   };
 
   return (
-fix/search-clear-button-1487
     <nav
       style={{
         display: 'flex',
@@ -42,7 +37,14 @@ fix/search-clear-button-1487
       }}
     >
       {/* Brand Logo / Title */}
-      <div style={{ fontWeight: 800, fontSize: '20px', letterSpacing: '0.05em', color: '#ef4444' }}>
+      <div
+        style={{
+          fontWeight: 800,
+          fontSize: '20px',
+          letterSpacing: '0.05em',
+          color: '#ef4444',
+        }}
+      >
         {t('title')}
       </div>
 
@@ -57,10 +59,10 @@ fix/search-clear-button-1487
           className="w-full pl-10 pr-12 py-2 rounded-lg border border-gray-300 bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           style={{ minHeight: '44px' }}
         />
-        
+
         {/* Search Icon */}
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-        
+
         {/* Clear Button - Shows only when text exists */}
         {searchTerm && (
           <button
@@ -81,10 +83,22 @@ fix/search-clear-button-1487
       </div>
 
       {/* Tabs / Links */}
-      <div style={{ display: 'flex', gap: '28px', fontSize: '14px', fontWeight: 500, flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '28px',
+          fontSize: '14px',
+          fontWeight: 500,
+          flexWrap: 'wrap',
+        }}
+      >
         <a
           href="#home"
-          style={{ color: '#f3f4f6', textDecoration: 'none', transition: 'color 0.2s' }}
+          style={{
+            color: '#f3f4f6',
+            textDecoration: 'none',
+            transition: 'color 0.2s',
+          }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = '#f3f4f6';
           }}
@@ -96,7 +110,11 @@ fix/search-clear-button-1487
         </a>
         <a
           href="#about"
-          style={{ color: '#9ca3af', textDecoration: 'none', transition: 'color 0.2s' }}
+          style={{
+            color: '#9ca3af',
+            textDecoration: 'none',
+            transition: 'color 0.2s',
+          }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = '#e5e7eb';
           }}
@@ -108,7 +126,11 @@ fix/search-clear-button-1487
         </a>
         <a
           href="#events"
-          style={{ color: '#9ca3af', textDecoration: 'none', transition: 'color 0.2s' }}
+          style={{
+            color: '#9ca3af',
+            textDecoration: 'none',
+            transition: 'color 0.2s',
+          }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = '#e5e7eb';
           }}
@@ -120,7 +142,11 @@ fix/search-clear-button-1487
         </a>
         <a
           href="#projects"
-          style={{ color: '#9ca3af', textDecoration: 'none', transition: 'color 0.2s' }}
+          style={{
+            color: '#9ca3af',
+            textDecoration: 'none',
+            transition: 'color 0.2s',
+          }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = '#e5e7eb';
           }}
@@ -132,7 +158,11 @@ fix/search-clear-button-1487
         </a>
         <a
           href="#contact"
-          style={{ color: '#9ca3af', textDecoration: 'none', transition: 'color 0.2s' }}
+          style={{
+            color: '#9ca3af',
+            textDecoration: 'none',
+            transition: 'color 0.2s',
+          }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = '#e5e7eb';
           }}
@@ -145,7 +175,7 @@ fix/search-clear-button-1487
       </div>
 
       {/* Action Button */}
-      <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button
           type="button"
           style={{
@@ -170,18 +200,7 @@ fix/search-clear-button-1487
         >
           {t('join')}
         </button>
-
-    <nav className="flex justify-between p-4 bg-gray-800 text-white">
-      <div className="flex gap-4">
-        <a href="/">{t('home')}</a>
-        <a href="/about">{t('about')}</a>
-        <a href="/events">{t('events')}</a>
-        <a href="/contact">{t('contact')}</a>
-      </div>
-      <div className="flex gap-4">
-        <button>{t('join')}</button>
         <LanguageSwitcher />
- main
       </div>
     </nav>
   );
